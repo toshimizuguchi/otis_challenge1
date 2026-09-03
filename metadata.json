@@ -1,0 +1,8 @@
+{
+  "name": "Remix Remix OTIS SMARTFLOW AI",
+  "description": "Mobilidade inteligente começa antes da falha acontecer. Plataforma de inteligência operacional, gestão de frotas e manutenção preditiva.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

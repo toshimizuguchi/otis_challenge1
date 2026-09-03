@@ -1,0 +1,438 @@
+@import "tailwindcss";
+
+
+/* ================================================================
+   OTIS SmartFlow — Sistema de Gestão de Elevadores
+   Design: ERP Corporativo — sem AI, sem neon, feito para trabalhar
+   ================================================================ */
+
+@layer base {
+  :root {
+    --bg-base:    #0f1117;
+    --bg-panel:   #161a22;
+    --bg-card:    #1d2129;
+    --bg-hover:   #232830;
+    --border:     #2a303c;
+    --border-lg:  #1e2431;
+    --txt-1:      #e4e8f0;
+    --txt-2:      #9ba3b4;
+    --txt-3:      #5a6375;
+    --blue:       #2563eb;
+    --blue-lt:    #3b82f6;
+    --blue-dim:   #1e3a5f;
+    --blue-muted: #1a2e4a;
+    --red:        #dc2626;
+    --red-dim:    #2d1414;
+    --amber:      #d97706;
+    --amber-dim:  #2d1e08;
+    --green:      #16a34a;
+    --green-dim:  #0f2818;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { font-size: 14px; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg-base);
+    color: var(--txt-1);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* ================================================================
+   SCROLLBARS
+   ================================================================ */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #2a303c; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #3a4255; }
+
+/* ================================================================
+   NEUTRALIZE: Remover todos os efeitos "AI" do Tailwind herdados
+   ================================================================ */
+
+/* Fundo global */
+.bg-slate-950, .bg-slate-950\/90, .bg-slate-950\/80,
+.bg-slate-950\/70, .bg-slate-950\/60 {
+  background-color: var(--bg-base) !important;
+}
+
+.bg-slate-900, .bg-slate-900\/90, .bg-slate-900\/80,
+.bg-slate-900\/60, .bg-slate-900\/40 {
+  background-color: var(--bg-card) !important;
+}
+
+/* Grid de fundo neon — eliminar */
+.tech-grid-bg {
+  background-image: none !important;
+  background-color: var(--bg-base) !important;
+}
+
+/* Bordas */
+.border-slate-800, .border-slate-800\/80, .border-slate-800\/60,
+.border-slate-800\/90, .border-slate-800\/40 {
+  border-color: var(--border) !important;
+}
+
+.border-slate-700, .border-slate-700\/50, .border-slate-700\/60,
+.border-slate-700\/70 {
+  border-color: #323849 !important;
+}
+
+/* Gradientes: transformar em superfícies planas */
+[class*="from-slate-9"][class*="via-blue-950"],
+[class*="from-slate-9"][class*="via-indigo-950"],
+[class*="bg-gradient-to-r"][class*="from-slate-9"],
+[class*="bg-gradient-to-br"][class*="from-slate-9"],
+[class*="bg-gradient-to-r"][class*="from-indigo-950"],
+[class*="bg-gradient-to-br"][class*="from-indigo-950"] {
+  background-image: none !important;
+  background-color: var(--bg-card) !important;
+}
+
+/* Cyan neon → Azul corporativo */
+.bg-cyan-500, .bg-cyan-500\/20, .bg-cyan-500\/15, .bg-cyan-500\/10 {
+  background-color: var(--blue-muted) !important;
+}
+.text-cyan-300, .text-cyan-400 {
+  color: #93bbf5 !important;
+}
+.text-cyan-200 {
+  color: var(--txt-1) !important;
+}
+.border-cyan-500, .border-cyan-500\/30, .border-cyan-500\/40,
+.border-cyan-500\/50, .border-cyan-500\/60 {
+  border-color: #2563eb60 !important;
+}
+
+/* Texto branco → texto natural */
+.text-white { color: var(--txt-1) !important; }
+.text-slate-100 { color: var(--txt-1) !important; }
+.text-slate-200 { color: #c8d0de !important; }
+.text-slate-300 { color: #9ba3b4 !important; }
+.text-slate-400 { color: var(--txt-3) !important; }
+
+/* Rounded excessivos → moderados */
+.rounded-2xl { border-radius: 8px !important; }
+.rounded-xl  { border-radius: 6px !important; }
+.rounded-lg  { border-radius: 5px !important; }
+.rounded-full:not(img):not([class*="w-2"]):not([class*="w-1.5"]):not([class*="w-1"]):not([class*="h-2"]):not([class*="h-1"]):not(.status-dot) {
+  border-radius: 4px !important;
+}
+
+/* Animações desnecessárias — desligar */
+.animate-pulse  { animation: none !important; }
+.animate-ping   { animation: none !important; }
+.animate-bounce { animation: none !important; }
+.radar-sweep    { animation: none !important; }
+.pulse-slow     { animation: none !important; }
+
+/* Gradientes de botão → botão flat */
+[class*="bg-gradient-to-r"][class*="from-cyan"],
+[class*="from-cyan-5"][class*="to-blue-6"],
+[class*="from-cyan-6"][class*="to-blue-6"],
+[class*="from-cyan-4"][class*="to-blue-5"] {
+  background: var(--blue) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+[class*="from-emerald-6"][class*="to-teal-6"],
+[class*="from-emerald-5"][class*="to-teal-5"] {
+  background: #166534 !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+/* Ring glow — remover */
+[class*="ring-cyan"], [class*="ring-1"], [class*="ring-2"] {
+  --tw-ring-shadow: none !important;
+  box-shadow: var(--tw-ring-shadow, none) !important;
+}
+
+/* Shadow neon */
+[class*="shadow-cyan"], [class*="shadow-blue"],
+[class*="shadow-emerald"], [class*="shadow-indigo"] {
+  --tw-shadow: none !important;
+  box-shadow: none !important;
+}
+
+/* ================================================================
+   CARDS — Estilo limpo
+   ================================================================ */
+[class*="rounded"][class*="bg-slate-9"],
+[class*="rounded"][class*="border-slate-8"] {
+  box-shadow: 0 1px 2px rgba(0,0,0,0.35) !important;
+  transition: border-color 0.12s ease !important;
+}
+
+/* ================================================================
+   HEADER
+   ================================================================ */
+header {
+  background: var(--bg-panel) !important;
+  border-bottom: 1px solid var(--border) !important;
+  backdrop-filter: none !important;
+}
+
+header h1, header h2, header span.font-bold {
+  letter-spacing: -0.01em;
+}
+
+/* ================================================================
+   SIDEBAR
+   ================================================================ */
+aside {
+  background: var(--bg-panel) !important;
+  border-right: 1px solid var(--border) !important;
+}
+
+/* Botão ativo na sidebar */
+aside button[style*="background-color: rgb(30, 58, 95)"],
+aside button[style*="#1e3a5f"] {
+  background-color: var(--blue-dim) !important;
+  border-left: 3px solid var(--blue-lt) !important;
+}
+
+/* ================================================================
+   MAIN CONTENT
+   ================================================================ */
+main {
+  background: var(--bg-base) !important;
+}
+
+/* ================================================================
+   MODAIS e OVERLAYS
+   ================================================================ */
+[class*="fixed"][class*="inset-0"]:not(aside > div),
+[class*="absolute"][class*="rounded-2xl"] {
+  /* dropdowns / modals */
+}
+
+/* Backgrounds de modal */
+[class*="bg-slate-9"][class*="rounded"][class*="border"][class*="shadow-2xl"],
+[class*="bg-slate-9"][class*="rounded"][class*="border"][class*="shadow-xl"] {
+  background-color: var(--bg-panel) !important;
+  border-color: var(--border) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6) !important;
+  border-radius: 8px !important;
+}
+
+/* ================================================================
+   INPUTS e FORMS
+   ================================================================ */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+select,
+textarea {
+  background-color: var(--bg-base) !important;
+  border-color: var(--border) !important;
+  color: var(--txt-1) !important;
+  border-radius: 6px !important;
+  font-size: 13px !important;
+  transition: border-color 0.12s ease !important;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--blue-lt) !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.15) !important;
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--txt-3) !important;
+}
+
+/* ================================================================
+   BOTÕES — sobrescrever estilos herdados
+   ================================================================ */
+button {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 13px !important;
+  letter-spacing: 0 !important;
+}
+
+/* Botão primário padrão (bg-cyan ou bg-gradient) */
+button[class*="from-cyan"],
+button[class*="bg-cyan-5"],
+button[class*="bg-gradient"][class*="from-cyan"] {
+  background: var(--blue) !important;
+  background-image: none !important;
+  color: white !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+}
+button[class*="from-cyan"]:hover,
+button[class*="bg-cyan-5"]:hover {
+  background: #1d4ed8 !important;
+}
+
+/* ================================================================
+   TABELAS — zebra sutil, bordas reais
+   ================================================================ */
+table { border-collapse: collapse; }
+thead th {
+  background: var(--bg-panel) !important;
+  color: var(--txt-3) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  padding: 9px 14px !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+tbody tr td {
+  padding: 10px 14px !important;
+  border-bottom: 1px solid #1e2431 !important;
+  color: var(--txt-2) !important;
+  font-size: 13px !important;
+}
+tbody tr:hover td { background: var(--bg-hover) !important; }
+tbody tr:last-child td { border-bottom: none !important; }
+
+/* ================================================================
+   STATUS BADGES — flat, legíveis
+   ================================================================ */
+/* Pills de status existentes */
+[class*="bg-rose-500"][class*="text-white"]:not(button),
+[class*="bg-rose-500\/"] { 
+  background-color: var(--red-dim) !important;
+  color: #fca5a5 !important;
+}
+[class*="bg-emerald-950"], [class*="bg-emerald-500\/10"],
+[class*="bg-emerald-500\/20"] {
+  background-color: var(--green-dim) !important;
+}
+[class*="bg-amber-950"], [class*="bg-amber-500\/10"],
+[class*="bg-amber-500\/20"] {
+  background-color: var(--amber-dim) !important;
+}
+[class*="bg-sky-950"], [class*="bg-indigo-950"] {
+  background-color: var(--blue-muted) !important;
+}
+
+/* ================================================================
+   TIPOGRAFIA
+   ================================================================ */
+h1 {
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  color: var(--txt-1) !important;
+  letter-spacing: -0.02em !important;
+  line-height: 1.25 !important;
+}
+h2, h3 {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: #c8d0de !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* ================================================================
+   NAVIGATION BREADCRUMB / PAGE HEADER
+   ================================================================ */
+.page-header {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 14px;
+  margin-bottom: 18px;
+}
+
+/* ================================================================
+   TOASTS
+   ================================================================ */
+[class*="bottom-5"][class*="right-5"] > div {
+  background: var(--bg-card) !important;
+  border-color: var(--border) !important;
+  border-radius: 6px !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5) !important;
+}
+
+/* ================================================================
+   RECHARTS
+   ================================================================ */
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: var(--border) !important;
+}
+.recharts-text { fill: var(--txt-3) !important; }
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: var(--bg-panel) !important;
+  border-color: var(--border) !important;
+  border-radius: 6px !important;
+  font-size: 12px !important;
+}
+
+/* ================================================================
+   SELECTION
+   ================================================================ */
+::selection {
+  background: rgba(59,130,246,0.25);
+  color: var(--txt-1);
+}
+
+/* ================================================================
+   COMPONENTES DE CARDS (sobrescrever padding/border)
+   ================================================================ */
+.card-erp, .panel, .metric-card {
+  background-color: var(--bg-card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3) !important;
+}
+
+/* ================================================================
+   FUNDO DA SIDEBAR — garantir consistência
+   ================================================================ */
+.sidebar-erp, aside.hidden {
+  background-color: var(--bg-panel) !important;
+}
+
+/* ================================================================
+   BADGES INLINE HOVER STATES — remover scale
+   ================================================================ */
+[class*="hover:scale"] {
+  --tw-scale-x: 1 !important;
+  --tw-scale-y: 1 !important;
+}
+
+/* ================================================================
+   OVERRIDE ESPECÍFICO: cards do dashboard que usam inline style
+   ================================================================ */
+/* Garante que divs com bg-card inline fiquem corretos */
+div[style*="#242830"] { background-color: #1d2129 !important; }
+div[style*="#1e2128"] { background-color: #161a22 !important; }
+div[style*="#1a1d23"] { background-color: #0f1117 !important; }
+div[style*="#252930"] { background-color: #232830 !important; }
+
+/* ================================================================
+   FONT MONO → Regular nas labels (menos robótico)
+   ================================================================ */
+.font-mono {
+  font-family: 'Inter', monospace !important;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em !important;
+}
+
+/* Números grandes — usar tabular */
+[class*="text-2xl"], [class*="text-3xl"] {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ================================================================
+   GRADIENTES EM BOTÕES DE AÇÃO
+   ================================================================ */
+button[class*="from-cyan-5"][class*="to-blue-6"] {
+  background: var(--blue) !important;
+  background-image: none !important;
+}
+
+/* ================================================================
+   MOBILE
+   ================================================================ */
+@media (max-width: 768px) {
+  h1 { font-size: 17px !important; }
+  h2, h3 { font-size: 13px !important; }
+}
