@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { 
+  calculateDistanceKm, 
+  getRealtimeTrafficCondition, 
+  checkPreventiveMismatch,
+  getAddressFixationSuggestion
+} from '../../utils/geoUtils';
+import { 
   MapPin, 
   Navigation, 
   Users, 
@@ -22,7 +28,10 @@ import {
   ArrowRight,
   ExternalLink,
   Activity,
-  UserCheck
+  UserCheck,
+  Pin,
+  Flame,
+  Check
 } from 'lucide-react';
 import L from 'leaflet';
 
@@ -55,7 +64,18 @@ const TILE_LAYERS = {
 };
 
 export const MapsModule: React.FC = () => {
-  const { technicians, equipments, calls, selectedCityFilter, setSelectedCityFilter, setActiveView, addToast } = useApp();
+  const { 
+    technicians, 
+    equipments, 
+    calls, 
+    selectedCityFilter, 
+    setSelectedCityFilter, 
+    setActiveView, 
+    addToast,
+    fixedAddressTechnicians,
+    fixTechnicianToAddress,
+    unfixTechnicianFromAddress
+  } = useApp();
   
   const [selectedPin, setSelectedPin] = useState<{
     type: 'TECH' | 'EQUIPMENT' | 'CALL';
@@ -285,8 +305,11 @@ export const MapsModule: React.FC = () => {
 
         const marker = L.marker([eq.lat, eq.lng], { icon });
 
+        const normEqAddr = eq.address.toLowerCase().trim();
+        const fixedResident = fixedAddressTechnicians[normEqAddr];
+
         const popupContent = `
-          <div class="p-2 space-y-2 min-w-[220px]">
+          <div class="p-2 space-y-2 min-w-[240px]">
             <div class="flex items-center justify-between gap-2 border-b border-slate-800 pb-1.5">
               <span class="font-bold text-slate-100 text-xs">${eq.tag}</span>
               <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${
@@ -298,15 +321,24 @@ export const MapsModule: React.FC = () => {
               <p class="text-slate-400 text-[10px]">${eq.customerName}</p>
               <p class="text-slate-400 text-[10px] mt-0.5">${eq.address}, ${eq.city}</p>
             </div>
-            <div class="bg-slate-950/80 p-2 rounded border border-slate-800 space-y-1">
-              <div class="flex justify-between text-[10px]">
-                <span class="text-slate-400">Risco Preditivo</span>
+            <div class="bg-slate-950/80 p-2 rounded border border-slate-800 space-y-1 text-[11px]">
+              <div class="flex items-center justify-between text-[10px]">
+                <span class="text-slate-400">Téc. Preventivo:</span>
+                <span class="font-semibold text-cyan-300">${eq.preventiveTechnicianName || 'Não atribuído'}</span>
+              </div>
+              ${fixedResident ? `
+                <div class="flex items-center justify-between text-[10px] text-amber-300 font-medium">
+                  <span>📌 Téc. Residente:</span>
+                  <span>${fixedResident.technicianName}</span>
+                </div>
+              ` : ''}
+              <div class="flex justify-between text-[10px] pt-1 border-t border-slate-800/60">
+                <span class="text-slate-400">Risco Preditivo:</span>
                 <span class="font-bold ${eq.predictiveRiskScore >= 70 ? 'text-rose-400' : 'text-emerald-400'}">${eq.predictiveRiskScore}/100</span>
               </div>
               <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
                 <div class="h-full ${eq.predictiveRiskScore >= 70 ? 'bg-rose-500' : 'bg-emerald-500'}" style="width: ${eq.predictiveRiskScore}%"></div>
               </div>
-              <p class="text-[10px] text-slate-400 italic line-clamp-2 mt-1">${eq.riskExplanation || 'Parâmetros normais de telemetria.'}</p>
             </div>
             <div class="text-[10px] text-cyan-400 font-mono text-center pt-0.5">
               Clique no marcador para abrir o dossiê completo
@@ -355,8 +387,10 @@ export const MapsModule: React.FC = () => {
 
         const marker = L.marker([call.lat, call.lng], { icon });
 
+        const isMismatch = call.technicianFamiliarity?.preventiveTechMismatch;
+
         const popupContent = `
-          <div class="p-2 space-y-2 min-w-[220px]">
+          <div class="p-2 space-y-2 min-w-[240px]">
             <div class="flex items-center justify-between gap-2 border-b border-slate-800 pb-1.5">
               <span class="font-bold text-rose-400 text-xs">${call.callNumber}</span>
               <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${
@@ -369,6 +403,22 @@ export const MapsModule: React.FC = () => {
               <p class="text-slate-400 text-[10px] mt-0.5">${call.address}, ${call.city}</p>
             </div>
             <p class="text-[11px] text-slate-300 bg-slate-950/80 p-2 rounded border border-slate-800">${call.problemDescription}</p>
+            
+            <div class="grid grid-cols-2 gap-1 bg-slate-950/80 p-1.5 rounded border border-slate-800 text-[10px]">
+              <div>
+                <span class="text-slate-400">Distância:</span> <strong class="text-cyan-300">${call.distanceKm ? call.distanceKm.toFixed(1) + ' km' : '1.2 km'}</strong>
+              </div>
+              <div>
+                <span class="text-slate-400">Trânsito:</span> <strong class="text-amber-300">${call.trafficCondition || 'Fluido'}</strong>
+              </div>
+            </div>
+
+            ${isMismatch ? `
+              <div class="p-1.5 rounded bg-amber-500/15 border border-amber-500/30 text-[10px] text-amber-300">
+                ⚠️ <strong>Atenção:</strong> Técnico Preventiva (${call.technicianFamiliarity?.preventiveTechName}) ≠ Emergência (${call.technicianName})
+              </div>
+            ` : ''}
+
             <div class="text-[10px] text-cyan-400 font-mono text-center pt-0.5">
               Status: ${call.status} • Técnico: ${call.technicianName || 'Não atribuído'}
             </div>
@@ -850,6 +900,34 @@ export const MapsModule: React.FC = () => {
                       </div>
                     </div>
 
+                    {/* Resident & Preventive Responsibility */}
+                    {(() => {
+                      const residentDuty = Object.values(fixedAddressTechnicians).find(
+                        item => item.technicianId === selectedPin.data.id
+                      );
+                      const preventiveElevators = equipments.filter(
+                        e => e.preventiveTechnicianId === selectedPin.data.id
+                      );
+                      return (
+                        <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1.5 text-xs">
+                          {residentDuty ? (
+                            <div className="flex items-center gap-1.5 text-amber-300 font-semibold text-[11px]">
+                              <Pin className="w-3.5 h-3.5 shrink-0 text-amber-400" />
+                              <span>Fixado como Residente: <strong>{residentDuty.address}</strong></span>
+                            </div>
+                          ) : (
+                            <div className="text-[11px] text-slate-400">
+                              Alocação dinâmica volante (sem ponto fixo exclusivo)
+                            </div>
+                          )}
+                          <div className="flex items-center justify-between text-[11px] text-slate-400 border-t border-slate-800/80 pt-1">
+                            <span>Elevadores Preventivos:</span>
+                            <span className="font-bold text-cyan-300">{preventiveElevators.length} ativos</span>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
                     {/* Action Buttons */}
                     <div className="flex items-center gap-2 pt-1">
                       {selectedPin.data.currentLocation?.lat && (
@@ -879,132 +957,300 @@ export const MapsModule: React.FC = () => {
                 )}
 
                 {/* Pin Type: EQUIPMENT */}
-                {selectedPin.type === 'EQUIPMENT' && (
-                  <div className="space-y-3.5">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] font-mono text-cyan-400 uppercase font-bold">{selectedPin.data.type}</span>
-                        <h4 className="text-sm font-bold text-slate-100">{selectedPin.data.tag}</h4>
-                        <p className="text-xs text-slate-400">{selectedPin.data.model}</p>
-                      </div>
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                        selectedPin.data.status === 'PARADO' ? 'bg-rose-600 text-white animate-pulse' :
-                        selectedPin.data.status === 'EM_RISCO' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
-                        'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                      }`}>
-                        {selectedPin.data.status}
-                      </span>
-                    </div>
+                {selectedPin.type === 'EQUIPMENT' && (() => {
+                  const eq = selectedPin.data;
+                  const normAddr = eq.address.toLowerCase().trim();
+                  const fixedEntry = fixedAddressTechnicians[normAddr];
+                  const suggestion = getAddressFixationSuggestion(
+                    eq.address, 
+                    eq.buildingName, 
+                    equipments.filter(e => e.address.toLowerCase().trim() === normAddr), 
+                    technicians, 
+                    fixedAddressTechnicians
+                  );
+                  
+                  // Find nearest technician
+                  let nearestTech: any = null;
+                  let minDistance = 999;
+                  technicians.forEach(t => {
+                    if (t.currentLocation?.lat && eq.lat) {
+                      const d = calculateDistanceKm(t.currentLocation.lat, t.currentLocation.lng, eq.lat, eq.lng);
+                      if (d < minDistance) {
+                        minDistance = d;
+                        nearestTech = t;
+                      }
+                    }
+                  });
+                  const traffic = nearestTech && eq.lat 
+                    ? getRealtimeTrafficCondition(eq.city, minDistance)
+                    : null;
 
-                    <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-1.5 text-xs">
-                      <div className="text-slate-300 font-semibold">{selectedPin.data.customerName}</div>
-                      <div className="text-slate-400 text-[11px]">{selectedPin.data.buildingName}</div>
-                      <div className="text-slate-400 text-[11px]">{selectedPin.data.address}, {selectedPin.data.city}</div>
-                    </div>
-
-                    {/* Predictive AI Risk Box */}
-                    <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-2">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-400 font-medium">Índice Preditivo de Falha</span>
-                        <span className={`font-mono font-bold ${
-                          selectedPin.data.predictiveRiskScore >= 70 ? 'text-rose-400' : 'text-emerald-400'
+                  return (
+                    <div className="space-y-3.5">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-[10px] font-mono text-cyan-400 uppercase font-bold">{eq.type}</span>
+                          <h4 className="text-sm font-bold text-slate-100">{eq.tag}</h4>
+                          <p className="text-xs text-slate-400">{eq.model}</p>
+                        </div>
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                          eq.status === 'PARADO' ? 'bg-rose-600 text-white animate-pulse' :
+                          eq.status === 'EM_RISCO' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
+                          'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                         }`}>
-                          {selectedPin.data.predictiveRiskScore} / 100
+                          {eq.status}
                         </span>
                       </div>
-                      <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full ${selectedPin.data.predictiveRiskScore >= 70 ? 'bg-rose-500' : 'bg-emerald-500'}`}
-                          style={{ width: `${selectedPin.data.predictiveRiskScore}%` }}
-                        />
-                      </div>
-                      <p className="text-[11px] text-slate-300 pt-1 leading-relaxed">
-                        {selectedPin.data.riskExplanation || selectedPin.data.aiPredictiveDiagnosis || 'Operação dentro dos padrões normais de telemetria.'}
-                      </p>
-                    </div>
 
-                    {/* Actions */}
-                    <div className="flex items-center gap-2 pt-1">
-                      {selectedPin.data.lat && (
-                        <button
-                          onClick={() => handleCenterOn(selectedPin.data.lat, selectedPin.data.lng)}
-                          className="flex-1 py-2 px-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-medium text-xs flex items-center justify-center gap-1.5 transition-all"
-                        >
-                          <Compass className="w-3.5 h-3.5" />
-                          Centralizar no Mapa
-                        </button>
+                      <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-1.5 text-xs">
+                        <div className="text-slate-300 font-semibold">{eq.customerName}</div>
+                        <div className="text-slate-400 text-[11px]">{eq.buildingName}</div>
+                        <div className="text-slate-400 text-[11px]">{eq.address}, {eq.city}</div>
+                        
+                        <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
+                          <span className="text-slate-400">Técnico da Preventiva:</span>
+                          <span className="font-semibold text-cyan-300">{eq.preventiveTechnicianName || 'Não atribuído'}</span>
+                        </div>
+                      </div>
+
+                      {/* Address Fixation Management Box */}
+                      <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-2 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-300 font-semibold flex items-center gap-1.5">
+                            <Pin className="w-3.5 h-3.5 text-amber-400" />
+                            Fixação de Técnico Residente
+                          </span>
+                          {fixedEntry && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">
+                              ATIVO
+                            </span>
+                          )}
+                        </div>
+
+                        {fixedEntry ? (
+                          <div className="space-y-1.5 pt-1">
+                            <p className="text-[11px] text-slate-300">
+                              Técnico fixado: <strong className="text-amber-300">{fixedEntry.technicianName}</strong>
+                            </p>
+                            <p className="text-[10px] text-slate-400 italic">
+                              Chamados de emergência e preventivas deste endereço priorizam este técnico.
+                            </p>
+                            <button
+                              onClick={() => {
+                                unfixTechnicianFromAddress(eq.address);
+                                addToast({
+                                  type: 'info',
+                                  title: 'Fixação Removida',
+                                  message: `Técnico desvinculado do endereço ${eq.address}`
+                                });
+                              }}
+                              className="w-full py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[11px] font-medium transition-all"
+                            >
+                              Desafixar Técnico deste Endereço
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="space-y-1.5 pt-1">
+                            {suggestion.shouldSuggestFixation && suggestion.suggestedTech ? (
+                              <>
+                                <p className="text-[11px] text-amber-200">
+                                  💡 <strong>Recomendação:</strong> {suggestion.reason}
+                                </p>
+                                <button
+                                  onClick={() => {
+                                    if (suggestion.suggestedTech) {
+                                      fixTechnicianToAddress(
+                                        eq.address,
+                                        eq.buildingName,
+                                        suggestion.suggestedTech.id,
+                                        suggestion.suggestedTech.name
+                                      );
+                                      addToast({
+                                        type: 'success',
+                                        title: 'Técnico Fixado',
+                                        message: `${suggestion.suggestedTech.name} foi fixado para ${eq.address}`
+                                      });
+                                    }
+                                  }}
+                                  className="w-full py-1.5 px-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all"
+                                >
+                                  <Pin className="w-3 h-3" />
+                                  Fixar {suggestion.suggestedTech.name} como Residente
+                                </button>
+                              </>
+                            ) : (
+                              <p className="text-[11px] text-slate-400">
+                                Endereço sem técnico exclusivo fixado. As ordens são despachadas dinamicamente.
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Real-time Distance & Traffic to Nearest Technician */}
+                      {nearestTech && traffic && (
+                        <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-1.5 text-xs">
+                          <div className="text-slate-400 font-medium text-[11px]">Técnico Mais Próximo no Radar:</div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-200 font-semibold text-xs">{nearestTech.name}</span>
+                            <span className="font-mono text-cyan-300 font-bold">{minDistance.toFixed(1)} km</span>
+                          </div>
+                          <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-slate-800/60">
+                            <span>Trânsito Atual:</span>
+                            <span className="text-amber-300 font-medium">{traffic.label} (+{traffic.delayMin} min)</span>
+                          </div>
+                        </div>
                       )}
-                      <button
-                        onClick={() => {
-                          setActiveView('equipments');
-                          addToast({
-                            type: 'info',
-                            title: 'Módulo de Equipamentos',
-                            message: `Navegando para o detalhamento do ativo ${selectedPin.data.tag}`
-                          });
-                        }}
-                        className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs flex items-center justify-center gap-1"
-                        title="Ver ativo completo"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </button>
+
+                      {/* Predictive AI Risk Box */}
+                      <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-400 font-medium">Índice Preditivo de Falha</span>
+                          <span className={`font-mono font-bold ${
+                            eq.predictiveRiskScore >= 70 ? 'text-rose-400' : 'text-emerald-400'
+                          }`}>
+                            {eq.predictiveRiskScore} / 100
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full ${eq.predictiveRiskScore >= 70 ? 'bg-rose-500' : 'bg-emerald-500'}`}
+                            style={{ width: `${eq.predictiveRiskScore}%` }}
+                          />
+                        </div>
+                        <p className="text-[11px] text-slate-300 pt-1 leading-relaxed">
+                          {eq.riskExplanation || eq.aiPredictiveDiagnosis || 'Operação dentro dos padrões normais de telemetria.'}
+                        </p>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-2 pt-1">
+                        {eq.lat && (
+                          <button
+                            onClick={() => handleCenterOn(eq.lat, eq.lng)}
+                            className="flex-1 py-2 px-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-medium text-xs flex items-center justify-center gap-1.5 transition-all"
+                          >
+                            <Compass className="w-3.5 h-3.5" />
+                            Centralizar no Mapa
+                          </button>
+                        )}
+                        <button
+                          onClick={() => {
+                            setActiveView('equipments');
+                            addToast({
+                              type: 'info',
+                              title: 'Módulo de Equipamentos',
+                              message: `Navegando para o detalhamento do ativo ${eq.tag}`
+                            });
+                          }}
+                          className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs flex items-center justify-center gap-1"
+                          title="Ver ativo completo"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {/* Pin Type: CALL */}
-                {selectedPin.type === 'CALL' && (
-                  <div className="space-y-3.5">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] font-mono text-rose-400 uppercase font-bold">{selectedPin.data.callNumber}</span>
-                        <h4 className="text-sm font-bold text-slate-100">{selectedPin.data.buildingName}</h4>
-                      </div>
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                        selectedPin.data.hasTrappedPassenger ? 'bg-red-600 text-white animate-bounce' : 'bg-amber-500/20 text-amber-300'
-                      }`}>
-                        {selectedPin.data.hasTrappedPassenger ? 'PASSAGEIRO PRESO' : selectedPin.data.priority}
-                      </span>
-                    </div>
+                {selectedPin.type === 'CALL' && (() => {
+                  const call = selectedPin.data;
+                  const isMismatch = call.technicianFamiliarity?.preventiveTechMismatch;
+                  const familiarity = call.technicianFamiliarity;
 
-                    <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-1.5 text-xs">
-                      <p className="text-slate-300 font-medium">Problema Detectado:</p>
-                      <p className="text-slate-300 text-[11px] leading-relaxed">{selectedPin.data.problemDescription}</p>
-                      <div className="text-slate-400 text-[11px] pt-1">
-                        Ativo: <strong>{selectedPin.data.equipmentTag}</strong> ({selectedPin.data.equipmentModel})
+                  return (
+                    <div className="space-y-3.5">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-[10px] font-mono text-rose-400 uppercase font-bold">{call.callNumber}</span>
+                          <h4 className="text-sm font-bold text-slate-100">{call.buildingName}</h4>
+                        </div>
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                          call.hasTrappedPassenger ? 'bg-red-600 text-white animate-bounce' : 'bg-amber-500/20 text-amber-300'
+                        }`}>
+                          {call.hasTrappedPassenger ? 'PASSAGEIRO PRESO' : call.priority}
+                        </span>
                       </div>
-                      <div className="text-slate-400 text-[11px]">
-                        Técnico Despachado: <strong className="text-cyan-400">{selectedPin.data.technicianName || 'Em triagem'}</strong>
-                      </div>
-                    </div>
 
-                    <div className="flex items-center gap-2 pt-1">
-                      {selectedPin.data.lat && (
-                        <button
-                          onClick={() => handleCenterOn(selectedPin.data.lat, selectedPin.data.lng)}
-                          className="flex-1 py-2 px-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-medium text-xs flex items-center justify-center gap-1.5 transition-all"
-                        >
-                          <Compass className="w-3.5 h-3.5" />
-                          Centralizar no Chamado
-                        </button>
+                      <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-1.5 text-xs">
+                        <p className="text-slate-300 font-medium">Problema Detectado:</p>
+                        <p className="text-slate-300 text-[11px] leading-relaxed">{call.problemDescription}</p>
+                        <div className="text-slate-400 text-[11px] pt-1">
+                          Ativo: <strong>{call.equipmentTag}</strong> ({call.equipmentModel})
+                        </div>
+                        <div className="text-slate-400 text-[11px]">
+                          Técnico Despachado: <strong className="text-cyan-400">{call.technicianName || 'Em triagem'}</strong>
+                        </div>
+                      </div>
+
+                      {/* Realtime Distance, Traffic, and Familiarity */}
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800">
+                          <div className="text-[10px] text-slate-400">Distância GPS</div>
+                          <div className="text-sm font-bold text-cyan-300 font-mono mt-0.5">
+                            {call.distanceKm ? call.distanceKm.toFixed(1) + ' km' : '2.1 km'}
+                          </div>
+                        </div>
+                        <div className="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800">
+                          <div className="text-[10px] text-slate-400">Trânsito em Tempo Real</div>
+                          <div className="text-xs font-bold text-amber-300 mt-0.5 truncate">
+                            {call.trafficCondition || 'Moderado'} (+{call.trafficDelayMinutes || 4}m)
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Familiarity with Equipment */}
+                      <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-xs space-y-1">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-slate-400">Conhecimento do Equipamento:</span>
+                          <span className="font-bold text-emerald-400">
+                            {familiarity?.knowsEquipment ? `Já atendeu (${familiarity.previousVisitsCount || 1}x)` : '1º Atendimento neste Ativo'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Warning if Preventive Tech != Emergency Tech */}
+                      {isMismatch && (
+                        <div className="p-3 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-200 text-xs space-y-1.5 animate-pulse">
+                          <div className="flex items-center gap-1.5 font-bold text-amber-300">
+                            <AlertTriangle className="w-4 h-4 shrink-0" />
+                            <span>Atenção: Mismatch Operacional</span>
+                          </div>
+                          <p className="text-[11px] leading-relaxed text-amber-200/90">
+                            O técnico da preventiva periódica é <strong>{familiarity?.preventiveTechName}</strong>, mas este chamado de emergência foi atribuído a <strong>{call.technicianName}</strong> por critério de proximidade imediata.
+                          </p>
+                        </div>
                       )}
-                      <button
-                        onClick={() => {
-                          setActiveView('calls');
-                          addToast({
-                            type: 'info',
-                            title: 'Central de Chamados',
-                            message: `Abrindo chamado ${selectedPin.data.callNumber}`
-                          });
-                        }}
-                        className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs flex items-center justify-center gap-1"
-                        title="Ver chamado"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </button>
+
+                      <div className="flex items-center gap-2 pt-1">
+                        {call.lat && (
+                          <button
+                            onClick={() => handleCenterOn(call.lat, call.lng)}
+                            className="flex-1 py-2 px-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-medium text-xs flex items-center justify-center gap-1.5 transition-all"
+                          >
+                            <Compass className="w-3.5 h-3.5" />
+                            Centralizar no Chamado
+                          </button>
+                        )}
+                        <button
+                          onClick={() => {
+                            setActiveView('calls');
+                            addToast({
+                              type: 'info',
+                              title: 'Central de Chamados',
+                              message: `Abrindo chamado ${call.callNumber}`
+                            });
+                          }}
+                          className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs flex items-center justify-center gap-1"
+                          title="Ver chamado"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             ) : (
               <div className="p-6 text-center text-slate-400 text-xs bg-slate-950/40 rounded-xl border border-slate-800 space-y-2">

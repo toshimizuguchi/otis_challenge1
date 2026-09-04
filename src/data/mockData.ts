@@ -191,6 +191,10 @@ export const INITIAL_EQUIPMENTS: Equipment[] = [
     country: 'Brasil',
     lat: -22.8930,
     lng: -47.0255,
+    preventiveTechnicianId: 'tech-2',
+    preventiveTechnicianName: 'Carlos Mendonça',
+    assignedResidentTechnicianId: 'tech-2',
+    assignedResidentTechnicianName: 'Carlos Mendonça',
     contractId: 'ctr-101',
     installationYear: 2023,
     status: 'EM_RISCO',
@@ -247,6 +251,8 @@ export const INITIAL_EQUIPMENTS: Equipment[] = [
     country: 'Brasil',
     lat: -23.6912,
     lng: -46.5490,
+    preventiveTechnicianId: 'tech-5',
+    preventiveTechnicianName: 'Marcos Vinícius Costa',
     contractId: 'ctr-104',
     installationYear: 2023,
     status: 'EM_RISCO',
@@ -289,6 +295,8 @@ export const INITIAL_EQUIPMENTS: Equipment[] = [
     country: 'Brasil',
     lat: -23.6231,
     lng: -46.7015,
+    preventiveTechnicianId: 'tech-4',
+    preventiveTechnicianName: 'Ricardo Alencar',
     contractId: 'ctr-102',
     installationYear: 2021,
     status: 'OPERACIONAL',
@@ -323,6 +331,8 @@ export const INITIAL_EQUIPMENTS: Equipment[] = [
     country: 'Brasil',
     lat: -23.0075,
     lng: -47.1345,
+    preventiveTechnicianId: 'tech-3',
+    preventiveTechnicianName: 'Lucas Ferreira',
     contractId: 'ctr-103',
     installationYear: 2022,
     status: 'PARADO',
@@ -365,6 +375,8 @@ export const INITIAL_EQUIPMENTS: Equipment[] = [
     country: 'Brasil',
     lat: -22.9068,
     lng: -43.1769,
+    preventiveTechnicianId: 'tech-9',
+    preventiveTechnicianName: 'Marcelo Queiroz',
     contractId: 'ctr-105',
     installationYear: 2020,
     status: 'OPERACIONAL',
@@ -399,6 +411,8 @@ export const INITIAL_EQUIPMENTS: Equipment[] = [
     country: 'Brasil',
     lat: -23.6245,
     lng: -46.6990,
+    preventiveTechnicianId: 'tech-4',
+    preventiveTechnicianName: 'Ricardo Alencar',
     contractId: 'ctr-102',
     installationYear: 2022,
     status: 'OPERACIONAL',
@@ -1792,6 +1806,96 @@ export const INITIAL_TRAINING_COURSES: TrainingCourse[] = [
         technicianId: 'tech-3',
         technicianName: 'Lucas Ferreira',
         reason: 'Mecânico titular de Viracopos; atualização com foco em redução de paradas não programadas.'
+      }
+    ]
+  },
+  {
+    id: 'crs-cables',
+    title: 'Trilha de Cabos & Tração: Cintas Planas PU e Monitoramento Ultrassônico Pulse',
+    category: 'Cabos e Tração',
+    trackType: 'CABOS_TRACAO',
+    targetModel: 'Otis Gen2 & SkyRise',
+    durationHours: 24,
+    modulesCount: 6,
+    enrolledTechnicians: ['tech-1', 'tech-2', 'tech-4'],
+    syllabus: [
+      'Estrutura de Cintas de Aço Revestidas de Poliuretano (CSB - Coated Steel Belts)',
+      'Inspeção não destrutiva por integridade eletromagnética contínua (Pulse System)',
+      'Medição de desgaste micrométrico e desfiamento superficial do PU',
+      'Alinhamento laser de polias motrizes e polias de desvio com coroa ranhurada',
+      'Protocolos de balanceamento de contrapeso e compensação de tração em edifícios altos'
+    ],
+    recommendedForTechnicians: [
+      {
+        technicianId: 'tech-1',
+        technicianName: 'João Pedro Santos',
+        reason: 'Manutenção periódica de cabos em Campinas e inspeção programada de esteiras e elevadores Gen2.'
+      },
+      {
+        technicianId: 'tech-5',
+        technicianName: 'Marcos Vinícius Costa',
+        reason: 'Reciclagem em inspeção de cabos de elevadores de carga e leito hospitalar.'
+      }
+    ]
+  },
+  {
+    id: 'crs-regen',
+    title: 'Trilha de Energia Regenerativa: Inversores ReGen VVVF & Eficiência Energética',
+    category: 'Energia Regenerativa',
+    trackType: 'ENERGIA_REGENERATIVA',
+    targetModel: 'Drives Otis ReGen (Compass 360 & Gen2)',
+    durationHours: 20,
+    modulesCount: 5,
+    enrolledTechnicians: ['tech-2', 'tech-4'],
+    syllabus: [
+      'Princípios de frenagem regenerativa e devolução de energia trifásica senoidal limpa à rede predial',
+      'Topologia de conversores bidirecionais IGBT e controle de fator de potência (FP > 0.98)',
+      'Filtragem de distorção harmônica ativa (THD < 5%) conforme norma IEEE 519',
+      'Diagnóstico de bancos de capacitores de link CC e monitoramento térmico preditivo de dissipadores',
+      'Parametrização e leitura de telemetria de economia de kWh no SmartFlow IoT'
+    ],
+    recommendedForTechnicians: [
+      {
+        technicianId: 'tech-4',
+        technicianName: 'Ricardo Alencar',
+        reason: 'Responsável pelo complexo Rochaverá Corporate Towers com alta densidade de drives ReGen.'
+      },
+      {
+        technicianId: 'tech-2',
+        technicianName: 'Carlos Mendonça',
+        reason: 'Implementação de modernização verde e pacotes de sustentabilidade corporativa.'
+      }
+    ]
+  },
+  {
+    id: 'crs-seismic',
+    title: 'Trilha Obrigatória de Resposta Sísmica: Protocolos ODS & Sensores de Terremoto (México / LatAm)',
+    category: 'Resposta Sísmica',
+    trackType: 'RESPOSTA_SISMICA',
+    isMandatory: true,
+    regionRequirement: 'México (CDMX, Guadalajara, Monterrey) & Zonas Sísmicas LatAm',
+    targetModel: 'Linhas SkyRise, Gen2 & Heavy Duty (México & Cone Sul Sísmico)',
+    durationHours: 32,
+    modulesCount: 8,
+    enrolledTechnicians: ['tech-7', 'tech-8', 'tech-10'],
+    syllabus: [
+      'Normativa sísmica internacional ASME A17.1 / CSA B44 e norma mexicana NOM-207-SCFI',
+      'Sistema de Operação Sísmica Otis (ODS): Sensores de onda primária (P-Wave) e onda secundária (S-Wave)',
+      'Manobra imediata de evacuação: Parada no andar mais próximo em sentido contrário ao contrapeso',
+      'Abertura total de portas, desativação de chamadas de pavimento e corte seguro de energia de tração',
+      'Protocolo de inspeção pós-sismo: Checagem de cabos descarrilados, detector de contrapeso (Ring Sensor) e guias',
+      'Checklist de liberação técnica pós-abalo com assinatura digital de engenharia de campo'
+    ],
+    recommendedForTechnicians: [
+      {
+        technicianId: 'tech-7',
+        technicianName: 'Rodrigo Tavares',
+        reason: 'Designado para suporte técnico de engenharia no polo México e áreas de alta sismicidade.'
+      },
+      {
+        technicianId: 'tech-10',
+        technicianName: 'Renan Fagundes',
+        reason: 'Certificação mandatória internacional para operações na filial mexicana e andina.'
       }
     ]
   }

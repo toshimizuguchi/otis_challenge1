@@ -37,6 +37,12 @@ import {
   Mail,
   Award
 } from 'lucide-react';
+import { 
+  calculateDistanceKm, 
+  getRealtimeTrafficCondition, 
+  checkTechnicianEquipmentFamiliarity, 
+  checkPreventiveMismatch 
+} from '../../utils/geoUtils';
 
 export const CallsModule: React.FC = () => {
   const { 
@@ -48,7 +54,10 @@ export const CallsModule: React.FC = () => {
     selectedCityFilter, 
     setSelectedCityFilter, 
     currentUser,
-    addToast
+    addToast,
+    fixedAddressTechnicians,
+    fixTechnicianToAddress,
+    unfixTechnicianFromAddress
   } = useApp();
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -391,6 +400,34 @@ export const CallsModule: React.FC = () => {
                     <span className="truncate">{call.buildingName} • {call.city}</span>
                   </div>
 
+                  {/* Geolocation, Real-time Traffic & Familiarity Tags */}
+                  <div className="flex items-center gap-1.5 flex-wrap text-[10px] pt-0.5">
+                    <span className="text-cyan-300 font-mono font-medium flex items-center gap-0.5">
+                      <MapPin className="w-3 h-3 text-cyan-400" />
+                      {call.distanceKm || (call.city === 'Campinas' ? '4.8' : '6.2')} km
+                    </span>
+                    <span>•</span>
+                    <span className={`px-1.5 py-0.2 rounded font-bold ${
+                      call.trafficCondition === 'CONGESTIONADO' || call.trafficCondition === 'INTENSO'
+                        ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                        : call.trafficCondition === 'MODERADO'
+                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                        : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                    }`}>
+                      🚦 {call.trafficCondition || 'Trânsito Moderado'}{call.trafficDelayMinutes ? ` (+${call.trafficDelayMinutes}m)` : ''}
+                    </span>
+                    {call.technicianFamiliarity?.knowsEquipment && (
+                      <span className="px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-bold">
+                        ⭐ Conhece Ativo
+                      </span>
+                    )}
+                    {call.technicianFamiliarity?.preventiveTechMismatch && (
+                      <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">
+                        ⚠️ Descompasso Preventiva
+                      </span>
+                    )}
+                  </div>
+
                   {/* Row 4: Problem snippet */}
                   <p className="text-xs text-slate-300 line-clamp-2 pt-0.5">
                     {call.problemDescription}
@@ -647,6 +684,124 @@ export const CallsModule: React.FC = () => {
                 )}
               </div>
             </div>
+
+            {/* Operational Intelligence Card: Traffic, Familiarity, Preventive Mismatch & Address Pinning */}
+            {(() => {
+              const activeEquipment = equipments.find(e => e.id === activeDetailCall.equipmentId);
+              const assignedTech = technicians.find(t => t.id === activeDetailCall.technicianId || t.name === activeDetailCall.technicianName);
+              const isPreventiveMismatch = activeEquipment?.preventiveTechnicianName && 
+                assignedTech && 
+                activeEquipment.preventiveTechnicianName.toLowerCase() !== assignedTech.name.toLowerCase();
+              const knowsEq = assignedTech && activeEquipment ? checkTechnicianEquipmentFamiliarity(assignedTech, activeEquipment).knowsEquipment : false;
+              const isAddressFixed = Boolean(fixedAddressTechnicians[activeDetailCall.address]?.technicianId === activeDetailCall.technicianId);
+
+              return (
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950/30 border border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                    <div className="flex items-center gap-2">
+                      <Navigation className="w-4 h-4 text-cyan-400" />
+                      <h4 className="text-xs font-bold text-slate-100 uppercase tracking-wider">
+                        Logística em Tempo Real & Alinhamento Técnico
+                      </h4>
+                    </div>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
+                      Telemetria Inteligente
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                    {/* Traffic & Distance */}
+                    <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1">
+                      <div className="text-[10px] text-slate-400 font-bold uppercase">Distância & Trânsito</div>
+                      <div className="text-cyan-300 font-mono font-bold text-sm">
+                        {activeDetailCall.distanceKm || '4.8'} km
+                      </div>
+                      <div className="text-[11px] text-slate-300">
+                        🚦 {activeDetailCall.trafficCondition || 'Trânsito Moderado'} (+{activeDetailCall.trafficDelayMinutes || 4} min TA)
+                      </div>
+                    </div>
+
+                    {/* Equipment Knowledge */}
+                    <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1">
+                      <div className="text-[10px] text-slate-400 font-bold uppercase">Familiaridade com o Ativo</div>
+                      <div className="text-sm font-bold flex items-center gap-1.5">
+                        {knowsEq ? (
+                          <span className="text-emerald-400 flex items-center gap-1">
+                            <CheckCircle className="w-3.5 h-3.5" />
+                            <span>Já Conhece o Ativo</span>
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 font-normal">
+                            Primeiro Atendimento
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[10px] text-slate-400">
+                        {knowsEq ? 'Histórico de folgas e manutenções anteriores dominado' : 'Equipamento padrão linha Otis'}
+                      </div>
+                    </div>
+
+                    {/* Address Fixation Status */}
+                    <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1">
+                      <div className="text-[10px] text-slate-400 font-bold uppercase">Técnico Residente por Endereço</div>
+                      <div className="text-sm font-bold">
+                        {isAddressFixed ? (
+                          <span className="text-cyan-400 flex items-center gap-1">
+                            <Award className="w-3.5 h-3.5" />
+                            <span>Fixado no Local</span>
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 font-normal">
+                            Despacho Rotativo
+                          </span>
+                        )}
+                      </div>
+                      <div className="pt-0.5">
+                        {isAddressFixed ? (
+                          <button
+                            type="button"
+                            onClick={() => unfixTechnicianFromAddress(activeDetailCall.address)}
+                            className="text-[10px] text-rose-400 hover:underline cursor-pointer"
+                          >
+                            Desafixar deste endereço
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (assignedTech) {
+                                fixTechnicianToAddress(
+                                  activeDetailCall.address,
+                                  activeDetailCall.buildingName,
+                                  assignedTech.id,
+                                  assignedTech.name
+                                );
+                              }
+                            }}
+                            className="text-[10px] text-cyan-400 hover:text-cyan-300 font-bold underline cursor-pointer"
+                          >
+                            + Fixar como residente
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Preventive vs Emergency Mismatch Banner */}
+                  {isPreventiveMismatch && (
+                    <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/40 text-xs text-amber-200 flex items-start gap-2">
+                      <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                      <div>
+                        <strong>⚠️ Descompasso de Equipe (Preventiva ≠ Emergência):</strong>
+                        <p className="text-[11px] text-amber-300/90 mt-0.5 leading-relaxed">
+                          O técnico titular da manutenção preventiva deste elevador é <strong>{activeEquipment?.preventiveTechnicianName}</strong>, mas a ordem emergencial foi atribuída a <strong>{activeDetailCall.technicianName}</strong>. Recomenda-se briefing rápido do relatório de desgastes e folgas da última preventiva.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Problem Description */}
             <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">

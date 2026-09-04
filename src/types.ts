@@ -64,6 +64,10 @@ export interface Equipment {
   }[];
   lat?: number;
   lng?: number;
+  preventiveTechnicianId?: string;
+  preventiveTechnicianName?: string;
+  assignedResidentTechnicianId?: string;
+  assignedResidentTechnicianName?: string;
 }
 
 export interface Technician {
@@ -227,6 +231,20 @@ export interface Call {
   arrivalTimeMinutes?: number; // TA
   solutionTimeMinutes?: number; // TB
   
+  // Geolocation, Live Traffic & Technician Familiarity
+  distanceKm?: number;
+  trafficCondition?: 'LIVRE' | 'MODERADO' | 'INTENSO' | 'CONGESTIONADO';
+  trafficDelayMinutes?: number;
+  technicianFamiliarity?: {
+    knowsEquipment: boolean;
+    preventiveTechMismatch: boolean;
+    preventiveTechName?: string;
+    previousVisitsCount?: number;
+    suggestedFixedTechName?: string;
+    isFixedResidentTech?: boolean;
+    familiarityReason?: string;
+  };
+  
   // Parts & Work done
   usedParts?: {
     partId: string;
@@ -359,6 +377,10 @@ export interface TrainingCourse {
   durationHours: number;
   modulesCount: number;
   enrolledTechnicians: string[];
+  isMandatory?: boolean;
+  regionRequirement?: string; // e.g. 'México & Região Sísmica do Pacífico'
+  trackType?: 'CABOS_TRACAO' | 'ENERGIA_REGENERATIVA' | 'RESPOSTA_SISMICA' | 'GERAL';
+  syllabus?: string[];
   recommendedForTechnicians: {
     technicianId: string;
     technicianName: string;

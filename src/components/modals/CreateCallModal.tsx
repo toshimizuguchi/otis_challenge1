@@ -41,6 +41,14 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { CallOrigin, EquipmentType, Technician, Customer } from '../../types';
+import { 
+  calculateDistanceKm, 
+  getRealtimeTrafficCondition, 
+  calculateEtaWithTraffic, 
+  checkTechnicianEquipmentFamiliarity, 
+  checkPreventiveMismatch, 
+  getAddressFixationSuggestion 
+} from '../../utils/geoUtils';
 
 interface CreateCallModalProps {
   isOpen: boolean;
@@ -150,7 +158,10 @@ export const CreateCallModal: React.FC<CreateCallModalProps> = ({
     createNewCall,
     createCustomer,
     createEquipment,
-    addToast
+    addToast,
+    fixedAddressTechnicians,
+    fixTechnicianToAddress,
+    unfixTechnicianFromAddress
   } = useApp();
 
   // Mode: existing customer search vs new customer registration vs emergency fast-track
@@ -316,26 +327,68 @@ export const CreateCallModal: React.FC<CreateCallModalProps> = ({
     }
   }, [isOpen, activeAddress]);
 
+  // Find current targeted equipment (if any selected or matched)
+  const currentTargetEquipment = useMemo(() => {
+    if (selectedEquipmentId) {
+      return equipments.find(e => e.id === selectedEquipmentId) || null;
+    }
+    if (currentCustomer) {
+      return equipments.find(e => e.customerId === currentCustomer.id) || null;
+    }
+    if (activeAddress.trim()) {
+      return equipments.find(e => e.address.toLowerCase().includes(activeAddress.toLowerCase().trim())) || null;
+    }
+    return null;
+  }, [selectedEquipmentId, currentCustomer, activeAddress, equipments]);
+
+  // Address fixation suggestion
+  const addressFixationSuggestion = useMemo(() => {
+    const addressToUse = activeAddress.trim() || 'Av. Iguatemi, 777';
+    const buildingToUse = currentCustomer?.buildingName || newBuildingName || 'Edifício Corporativo';
+    const eqsAtAddress = equipments.filter(e => e.address.toLowerCase().includes(addressToUse.toLowerCase()));
+    return getAddressFixationSuggestion(
+      addressToUse,
+      buildingToUse,
+      eqsAtAddress,
+      technicians,
+      fixedAddressTechnicians
+    );
+  }, [activeAddress, currentCustomer, newBuildingName, equipments, technicians, fixedAddressTechnicians]);
+
   // Calculate Nearest and Most Skilled Technicians & Urgency of Current Calls
   const rankedTechnicians = useMemo(() => {
     return technicians.map((tech) => {
-      // 1. Distance Calculation (derived from city match and pseudo-hash)
-      let baseDistance = 8.5;
       const targetCity = (customerMode === 'SEARCH' && currentCustomer ? currentCustomer.city : newCity).toLowerCase();
-      const techCity = tech.city.toLowerCase();
+      
+      // 1. Real Geodesic Haversine Distance
+      let baseDistance = 5.5;
+      const targetLat = currentTargetEquipment?.lat || (targetCity.includes('campinas') ? -22.8930 : targetCity.includes('bernardo') ? -23.6912 : -23.5850);
+      const targetLng = currentTargetEquipment?.lng || (targetCity.includes('campinas') ? -47.0255 : targetCity.includes('bernardo') ? -46.5490 : -46.6600);
 
-      if (targetCity === techCity) {
-        // Same city: between 1.2 km and 8.0 km
-        const seed = (tech.name.charCodeAt(0) + (tech.specialties.length * 3)) % 10;
-        baseDistance = 1.4 + seed * 0.6;
+      if (tech.currentLocation?.lat && tech.currentLocation?.lng) {
+        baseDistance = calculateDistanceKm(tech.currentLocation.lat, tech.currentLocation.lng, targetLat, targetLng);
+      } else if (targetCity === tech.city.toLowerCase()) {
+        baseDistance = 4.2;
       } else {
-        // Different city: 18km - 45km
-        baseDistance = 22.0 + (tech.name.charCodeAt(1) % 15);
+        baseDistance = 26.0;
       }
 
-      const etaMin = Math.max(8, Math.round(baseDistance * 2.1));
+      // 2. Real-time Traffic Calculation
+      const trafficCondition = getRealtimeTrafficCondition(targetCity, baseDistance);
+      const { finalEtaMin, delayMin } = calculateEtaWithTraffic(baseDistance, trafficCondition);
 
-      // 2. Look up Active Call and its Urgency / Gravity
+      // 3. Equipment Familiarity (Prioritize tech who already knows the equipment)
+      const familiarity = checkTechnicianEquipmentFamiliarity(tech, currentTargetEquipment);
+
+      // 4. Preventive vs Emergency Mismatch Detection
+      const preventiveMismatch = checkPreventiveMismatch(tech.id, tech.name, currentTargetEquipment);
+
+      // 5. Fixed Resident Technician for this address
+      const isFixedResident = Boolean(
+        fixedAddressTechnicians[activeAddress.trim()]?.technicianId === tech.id
+      );
+
+      // 6. Look up Active Call and its Urgency / Gravity
       const activeCall = calls.find(c =>
         (c.technicianId === tech.id || c.assignedTechnicians?.some(at => at.id === tech.id) || tech.currentCallId === c.id) &&
         c.status !== 'CONCLUIDO' && c.status !== 'CANCELADO'
@@ -370,7 +423,7 @@ export const CreateCallModal: React.FC<CreateCallModalProps> = ({
         activeCallNumber = activeCall.callNumber;
       }
 
-      // 3. Skill & Brand Matching
+      // 7. Skill & Brand Matching
       let skillMatches = 0;
       const matchedSpecialties: string[] = [];
 
@@ -418,24 +471,34 @@ export const CreateCallModal: React.FC<CreateCallModalProps> = ({
         }
       });
 
-      // 4. Status Score & Protection Adjustments
+      // 8. Status Score & Protection Adjustments
       let statusBonus = 0;
-      if (tech.status === 'DISPONIVEL' && !activeCall) statusBonus = 35;
-      else if (tech.status === 'A_CAMINHO' && !isExtremeUrgency) statusBonus = 15;
+      if (tech.status === 'DISPONIVEL' && !activeCall) statusBonus = 32;
+      else if (tech.status === 'A_CAMINHO' && !isExtremeUrgency) statusBonus = 12;
       else if (activeCall && !isExtremeUrgency && !isHighUrgency) statusBonus = 5;
       else if (isHighUrgency) statusBonus = -10;
       else if (isExtremeUrgency) statusBonus = -70; // Penalize extreme urgency so available techs are prioritized
 
-      // 5. Proximity Score (Closer is better)
-      const proximityScore = Math.max(0, 40 - baseDistance * 1.2);
+      // 9. Proximity Score (Haversine Distance weighted)
+      const proximityScore = Math.max(0, 35 - baseDistance * 1.3);
 
-      // 6. Total Match Score (0 - 100)
-      const totalScore = Math.max(5, Math.min(99, Math.round(proximityScore + statusBonus + skillMatches * 8 + (tech.slaComplianceRate ? tech.slaComplianceRate * 0.1 : 5))));
+      // 10. Familiarity Bonus (+30 if preventive tech, up to +25 if prior interventions, +30 if resident fixed)
+      const familiarityBonus = familiarity.scoreBonus + (isFixedResident ? 30 : 0);
+
+      // 11. Total Match Score (0 - 100)
+      const totalScore = Math.max(5, Math.min(99, Math.round(
+        proximityScore + statusBonus + skillMatches * 7 + familiarityBonus + (tech.slaComplianceRate ? tech.slaComplianceRate * 0.1 : 5)
+      )));
 
       return {
         ...tech,
         calculatedDistanceKm: parseFloat(baseDistance.toFixed(1)),
-        calculatedEtaMin: etaMin,
+        calculatedEtaMin: finalEtaMin,
+        trafficDelayMin: delayMin,
+        trafficCondition,
+        familiarity,
+        preventiveMismatch,
+        isFixedResident,
         matchedSpecialties: Array.from(new Set(matchedSpecialties)),
         matchScore: totalScore,
         activeCall,
@@ -453,7 +516,7 @@ export const CreateCallModal: React.FC<CreateCallModalProps> = ({
       if (!a.isExtremeUrgency && b.isExtremeUrgency) return -1;
       return b.matchScore - a.matchScore;
     });
-  }, [technicians, calls, customerMode, currentCustomer, newCity, equipmentBrand, equipmentType, buildingType, mainComponent]);
+  }, [technicians, calls, customerMode, currentCustomer, newCity, equipmentBrand, equipmentType, buildingType, mainComponent, currentTargetEquipment, fixedAddressTechnicians, activeAddress]);
 
   // Filter technicians based on user selected availability tab
   const displayedTechnicians = useMemo(() => {
@@ -1497,6 +1560,59 @@ export const CreateCallModal: React.FC<CreateCallModalProps> = ({
                 </button>
               </div>
 
+              {/* Address-based Resident Technician Suggestion Banner */}
+              {addressFixationSuggestion.shouldSuggestFixation && addressFixationSuggestion.suggestedTech && (
+                <div className="p-3.5 rounded-2xl bg-gradient-to-r from-cyan-950/70 via-blue-950/50 to-slate-900 border border-cyan-500/40 flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="p-2 rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 shrink-0">
+                      <Sparkles className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold text-cyan-200 flex items-center gap-1.5">
+                        <span>Sugestão de Fixação por Endereço</span>
+                        <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-cyan-500/20 text-cyan-300">Otimização TA</span>
+                      </div>
+                      <p className="text-[11px] text-slate-300 mt-0.5 line-clamp-2">
+                        {addressFixationSuggestion.reason}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => fixTechnicianToAddress(
+                      activeAddress.trim(),
+                      currentCustomer?.buildingName || newBuildingName || 'Edifício',
+                      addressFixationSuggestion.suggestedTech!.id,
+                      addressFixationSuggestion.suggestedTech!.name
+                    )}
+                    className="px-3 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold transition-all shrink-0 cursor-pointer shadow-md shadow-cyan-600/30 flex items-center gap-1.5"
+                  >
+                    <Award className="w-3.5 h-3.5" />
+                    <span>Fixar {addressFixationSuggestion.suggestedTech.name.split(' ')[0]} como Residente</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Address Already Fixed Notice */}
+              {addressFixationSuggestion.hasFixedTech && (
+                <div className="p-3 rounded-2xl bg-emerald-950/30 border border-emerald-500/30 flex items-center justify-between gap-2 text-xs flex-wrap">
+                  <div className="flex items-center gap-2 text-emerald-300">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>
+                      Técnico residente prioritário fixado para este endereço: <strong>{addressFixationSuggestion.fixedTech?.technicianName}</strong>
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => unfixTechnicianFromAddress(activeAddress.trim())}
+                    className="text-[10px] text-slate-400 hover:text-rose-400 underline cursor-pointer"
+                  >
+                    Desafixar Técnico
+                  </button>
+                </div>
+              )}
+
               {/* Filter Tabs by Availability */}
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
                 <button
@@ -1609,8 +1725,18 @@ export const CreateCallModal: React.FC<CreateCallModalProps> = ({
                                 <AlertOctagon className="w-2.5 h-2.5 text-rose-400" /> Resgate / Crítico
                               </span>
                             )}
+                            {tech.familiarity?.knowsEquipment && (
+                              <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 flex items-center gap-0.5" title={tech.familiarity.reason}>
+                                ⭐ Conhece o Ativo ({tech.familiarity.priorVisitsCount}x)
+                              </span>
+                            )}
+                            {tech.isFixedResident && (
+                              <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 flex items-center gap-0.5">
+                                📍 Residente Fixado
+                              </span>
+                            )}
                           </div>
-                          <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
+                          <div className="text-[11px] text-slate-400 flex items-center gap-1.5 flex-wrap mt-0.5">
                             <span className="text-cyan-300 font-mono font-bold">
                               📍 {tech.calculatedDistanceKm} km
                             </span>
@@ -1619,7 +1745,27 @@ export const CreateCallModal: React.FC<CreateCallModalProps> = ({
                               <Clock className="w-3 h-3 text-slate-400" />
                               ETA: <strong>{tech.calculatedEtaMin} min</strong>
                             </span>
+                            <span>•</span>
+                            <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold ${
+                              tech.trafficCondition.level === 'LIVRE' 
+                                ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' 
+                                : tech.trafficCondition.level === 'MODERADO'
+                                ? 'bg-amber-500/10 text-amber-300 border border-amber-500/20'
+                                : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                            }`} title={tech.trafficCondition.description}>
+                              🚦 {tech.trafficCondition.label}{tech.trafficDelayMin > 0 ? ` (+${tech.trafficDelayMin}m)` : ''}
+                            </span>
                           </div>
+
+                          {/* Preventive Mismatch Warning */}
+                          {tech.preventiveMismatch?.isMismatch && (severityLevel >= 3 || hasTrappedPassenger) && (
+                            <div className="mt-1.5 p-1.5 rounded-lg bg-amber-950/30 border border-amber-500/30 text-[10px] text-amber-200 flex items-start gap-1">
+                              <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0 mt-0.5" />
+                              <span>
+                                Técnico da preventiva deste ativo: <strong>{tech.preventiveMismatch.preventiveTechName}</strong> ≠ Chamado emergencial
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
 

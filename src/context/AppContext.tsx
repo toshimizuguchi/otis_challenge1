@@ -43,6 +43,12 @@ import {
   INITIAL_TIME_PUNCHES
 } from '../data/mockData';
 import { analyzeCallWithAI } from '../services/geminiService';
+import { 
+  calculateDistanceKm, 
+  getRealtimeTrafficCondition, 
+  checkTechnicianEquipmentFamiliarity, 
+  checkPreventiveMismatch 
+} from '../utils/geoUtils';
 
 export type ActiveView = 
   | 'dashboard'
@@ -197,6 +203,11 @@ interface AppContextType {
   // Import handler
   importDataRows: (rows: any[]) => void;
 
+  // Fixed Resident Technicians by Address
+  fixedAddressTechnicians: Record<string, { address: string; buildingName: string; technicianId: string; technicianName: string; assignedAt: string }>;
+  fixTechnicianToAddress: (address: string, buildingName: string, technicianId: string, technicianName: string) => void;
+  unfixTechnicianFromAddress: (address: string) => void;
+
   // Theme & Visual Identity
   theme: AppTheme;
   setTheme: (theme: AppTheme) => void;
@@ -282,6 +293,56 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : INITIAL_TIME_PUNCHES;
   });
   const [aiInsights] = useState<AIInsight[]>(INITIAL_AI_INSIGHTS);
+
+  // Fixed resident technicians pinned to addresses
+  const [fixedAddressTechnicians, setFixedAddressTechnicians] = useState<Record<string, { address: string; buildingName: string; technicianId: string; technicianName: string; assignedAt: string }>>(() => {
+    const saved = localStorage.getItem(STORAGE_PREFIX + 'fixed_addresses');
+    return saved ? JSON.parse(saved) : {
+      'Av. Iguatemi, 777': {
+        address: 'Av. Iguatemi, 777',
+        buildingName: 'Centro Empresarial Iguatemi Campinas',
+        technicianId: 'tech-2',
+        technicianName: 'Carlos Mendonça',
+        assignedAt: '2026-08-01T08:00:00.000Z'
+      }
+    };
+  });
+
+  const fixTechnicianToAddress = (address: string, buildingName: string, technicianId: string, technicianName: string) => {
+    setFixedAddressTechnicians(prev => {
+      const updated = {
+        ...prev,
+        [address]: {
+          address,
+          buildingName,
+          technicianId,
+          technicianName,
+          assignedAt: new Date().toISOString()
+        }
+      };
+      localStorage.setItem(STORAGE_PREFIX + 'fixed_addresses', JSON.stringify(updated));
+      return updated;
+    });
+    addToast({
+      type: 'success',
+      title: 'Técnico Residente Fixado',
+      message: `${technicianName} foi fixado como técnico prioritário para o endereço "${address}" (${buildingName}).`
+    });
+  };
+
+  const unfixTechnicianFromAddress = (address: string) => {
+    setFixedAddressTechnicians(prev => {
+      const updated = { ...prev };
+      delete updated[address];
+      localStorage.setItem(STORAGE_PREFIX + 'fixed_addresses', JSON.stringify(updated));
+      return updated;
+    });
+    addToast({
+      type: 'info',
+      title: 'Fixação Removida',
+      message: `Endereço "${address}" liberado para o fluxo padrão de despacho.`
+    });
+  };
 
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
@@ -546,6 +607,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       calculatedPriority === 'ALTO' ? 2.0 :
       calculatedPriority === 'MEDIO' ? 4.0 : 8.0;
 
+    // Real-time Distance, Traffic, Equipment Familiarity & Mismatch calculations
+    const chosenTech = technicians.find(t => t.id === chosenTechId);
+    const techLat = chosenTech?.currentLocation?.lat;
+    const techLng = chosenTech?.currentLocation?.lng;
+    const eqLat = equipment.lat || -22.8930;
+    const eqLng = equipment.lng || -47.0255;
+
+    const calculatedDistanceKm = (techLat && techLng) 
+      ? calculateDistanceKm(techLat, techLng, eqLat, eqLng) 
+      : 5.2;
+
+    const traffic = getRealtimeTrafficCondition(equipment.city, calculatedDistanceKm);
+    const familiarity = chosenTech 
+      ? checkTechnicianEquipmentFamiliarity(chosenTech, equipment) 
+      : { knowsEquipment: false, priorVisitsCount: 0, reason: '', isPreventiveTechnician: false, scoreBonus: 0 };
+    const mismatch = checkPreventiveMismatch(chosenTechId, chosenTechName, equipment);
+
+    const isFixedResident = Boolean(fixedAddressTechnicians[equipment.address]?.technicianId === chosenTechId);
+
     const newCall: Call = {
       id: 'call-' + Date.now(),
       callNumber,
@@ -568,6 +648,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       equipmentTag: callData.equipmentTag || equipment.tag,
       equipmentModel: callData.equipmentModel || equipment.model,
       equipmentType: callData.equipmentType || equipment.type,
+      lat: eqLat,
+      lng: eqLng,
+      distanceKm: calculatedDistanceKm,
+      trafficCondition: traffic.level,
+      trafficDelayMinutes: traffic.delayMin,
+      technicianFamiliarity: {
+        knowsEquipment: familiarity.knowsEquipment,
+        preventiveTechMismatch: mismatch.isMismatch,
+        preventiveTechName: equipment.preventiveTechnicianName,
+        previousVisitsCount: familiarity.priorVisitsCount,
+        familiarityReason: familiarity.reason,
+        isFixedResidentTech: isFixedResident,
+        suggestedFixedTechName: fixedAddressTechnicians[equipment.address]?.technicianName
+      },
       problemDescription: callData.problemDescription || 'Relato de anomalia registrado na central.',
       mainComponent: callData.mainComponent || 'Sistema de Portas',
       subComponent: callData.subComponent || 'Operador de Porta',
@@ -1262,6 +1356,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         selectedCityFilter,
         setSelectedCityFilter,
         importDataRows,
+        fixedAddressTechnicians,
+        fixTechnicianToAddress,
+        unfixTechnicianFromAddress,
         theme,
         setTheme
       }}
