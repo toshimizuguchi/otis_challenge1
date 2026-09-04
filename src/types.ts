@@ -62,6 +62,8 @@ export interface Equipment {
     description: string;
     technicianName: string;
   }[];
+  lat?: number;
+  lng?: number;
 }
 
 export interface Technician {
@@ -165,6 +167,8 @@ export interface Call {
   state: string;
   country: string;
   buildingName: string;
+  lat?: number;
+  lng?: number;
   
   // Equipment
   equipmentId: string;
