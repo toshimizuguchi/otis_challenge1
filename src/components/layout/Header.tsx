@@ -59,28 +59,13 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAIChat, onToggleMobileMenu
   const initials = currentUser.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
 
   return (
-    <header 
-      className="px-2.5 sm:px-4 safe-top"
-      style={{
-        height: 52,
-        backgroundColor: '#161a22',
-        borderBottom: '1px solid #2a303c',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        position: 'sticky',
-        top: 0,
-        zIndex: 30,
-        gap: 8,
-      }}
-    >
+    <header className="h-[52px] px-2.5 sm:px-4 safe-top bg-slate-900/95 border-b border-slate-800/90 flex items-center justify-between sticky top-0 z-30 gap-2 backdrop-blur-md">
       {/* LEFT — logo + mobile trigger */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+      <div className="flex items-center gap-2 shrink-0">
         {onToggleMobileMenu && (
           <button
-            className="md:hidden p-1.5 text-zinc-400 hover:text-zinc-200 active:scale-95 transition-all touch-manipulation cursor-pointer"
+            className="md:hidden p-1.5 text-slate-400 hover:text-white active:scale-95 transition-all touch-manipulation cursor-pointer rounded-lg hover:bg-slate-800"
             onClick={onToggleMobileMenu}
-            style={{ background: 'none', border: 'none', borderRadius: 6 }}
             aria-label="Menu"
           >
             <Menu size={20} />
@@ -88,116 +73,76 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAIChat, onToggleMobileMenu
         )}
 
         {/* Logo mark */}
-        <div style={{
-          width: 28, height: 28,
-          backgroundColor: '#1d4ed8',
-          borderRadius: 6,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          flexShrink: 0,
-        }}>
-          <span style={{ color: 'white', fontWeight: 800, fontSize: 11, letterSpacing: '-0.05em' }}>OT</span>
+        <div className="w-7 h-7 bg-cyan-500 rounded-lg flex items-center justify-center shrink-0 font-bold text-slate-950 text-xs shadow-sm">
+          OT
         </div>
 
-        <div style={{ lineHeight: 1.2 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#e4e8f0', letterSpacing: '-0.02em' }}>
-            OTIS <span className="hidden xs:inline">SmartFlow</span>
+        <div className="leading-tight">
+          <div className="text-[13px] font-bold text-white tracking-tight">
+            OTIS <span className="hidden xs:inline text-cyan-400">SmartFlow</span>
           </div>
-          <div className="hidden md:block" style={{ fontSize: 10, color: '#5a6375', fontWeight: 500 }}>
+          <div className="hidden md:block text-[10px] text-slate-500 font-medium">
             Gestão de Elevadores & Contratos
           </div>
         </div>
       </div>
 
       {/* CENTER — status discreto */}
-      <div className="hidden lg:flex" style={{ alignItems: 'center', gap: 6, fontSize: 11, color: '#5a6375' }}>
-        <span style={{
-          display: 'inline-flex', alignItems: 'center', gap: 5,
-          backgroundColor: '#0f1117',
-          border: '1px solid #2a303c',
-          borderRadius: 4,
-          padding: '3px 10px',
-        }}>
-          <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#16a34a', flexShrink: 0 }} />
-          <span style={{ color: '#9ba3b4', fontWeight: 500 }}>
+      <div className="hidden lg:flex items-center gap-1.5 text-[11px] text-slate-500">
+        <span className="inline-flex items-center gap-2 bg-slate-950 border border-slate-800/90 rounded-full px-3 py-1">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+          <span className="text-slate-300 font-medium">
             {currentUser.role === 'ATENDENTE' ? 'Central de Atendimento Ativa' : 'Sistema Operacional'}
           </span>
         </span>
       </div>
 
       {/* RIGHT — ações */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+      <div className="flex items-center gap-2 shrink-0">
 
         {/* Switcher de perfil */}
-        <div ref={roleRef} style={{ position: 'relative' }}>
+        <div ref={roleRef} className="relative">
           <button
             onClick={() => { setRoleDropdownOpen(v => !v); setUserMenuOpen(false); }}
-            className="touch-manipulation"
-            style={{
-              display: 'flex', alignItems: 'center', gap: 5,
-              padding: '5px 8px',
-              backgroundColor: '#0f1117',
-              border: '1px solid #2a303c',
-              borderRadius: 6,
-              cursor: 'pointer',
-              color: '#9ba3b4',
-              fontSize: 12,
-              fontWeight: 500,
-              transition: 'border-color 0.12s',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.borderColor = '#3b82f6')}
-            onMouseLeave={e => (e.currentTarget.style.borderColor = '#2a303c')}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-950 border border-slate-800 hover:border-slate-700 rounded-xl text-xs font-semibold text-slate-300 transition-all cursor-pointer shadow-sm touch-manipulation"
             title="Trocar perfil"
           >
-            <span className="hidden sm:inline" style={{ fontSize: 10, color: '#5a6375' }}>Perfil:</span>
-            <span className="truncate max-w-[82px] sm:max-w-none" style={{ fontWeight: 600, color: '#93bbf5' }}>
+            <span className="hidden sm:inline text-[10px] text-slate-500 uppercase">Perfil:</span>
+            <span className="truncate max-w-[84px] sm:max-w-none text-cyan-400 font-bold">
               {ROLE_LABELS[currentUser.role] || currentUser.role}
             </span>
-            <ChevronDown size={12} style={{ color: '#5a6375', flexShrink: 0 }} />
+            <ChevronDown size={12} className="text-slate-500 shrink-0" />
           </button>
 
           {roleDropdownOpen && (
-            <div style={{
-              position: 'absolute', right: 0, top: 'calc(100% + 6px)',
-              width: 240,
-              maxWidth: 'calc(100vw - 20px)',
-              backgroundColor: '#161a22',
-              border: '1px solid #2a303c',
-              borderRadius: 8,
-              boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
-              zIndex: 100,
-              overflow: 'hidden',
-            }}>
-              <div style={{ padding: '8px 12px 6px', borderBottom: '1px solid #2a303c' }}>
-                <span style={{ fontSize: 10, fontWeight: 700, color: '#5a6375', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            <div className="absolute right-0 top-[calc(100%+6px)] w-60 max-w-[calc(100vw-20px)] bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl z-50 overflow-hidden divide-y divide-slate-800/80">
+              <div className="px-3 py-2 bg-slate-950/60">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                   Simular Perfil de Acesso
                 </span>
               </div>
-              {rolesList.map(item => {
-                const isActive = currentUser.role === item.role;
-                return (
-                  <button
-                    key={item.role}
-                    onClick={() => { switchRole(item.role); setRoleDropdownOpen(false); }}
-                    style={{
-                      width: '100%', display: 'flex', alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '9px 12px', border: 'none', background: 'none',
-                      cursor: 'pointer', textAlign: 'left',
-                      backgroundColor: isActive ? '#1a2e4a' : 'transparent',
-                      borderLeft: isActive ? '3px solid #3b82f6' : '3px solid transparent',
-                      transition: 'background 0.1s',
-                    }}
-                    onMouseEnter={e => { if (!isActive) e.currentTarget.style.backgroundColor = '#232830'; }}
-                    onMouseLeave={e => { if (!isActive) e.currentTarget.style.backgroundColor = 'transparent'; }}
-                  >
-                    <div>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: isActive ? '#93bbf5' : '#c8d0de' }}>{item.title}</div>
-                      <div style={{ fontSize: 10, color: '#5a6375', marginTop: 1 }}>{item.desc}</div>
-                    </div>
-                    {isActive && <ShieldCheck size={13} style={{ color: '#3b82f6', flexShrink: 0 }} />}
-                  </button>
-                );
-              })}
+              <div className="p-1 space-y-0.5 max-h-72 overflow-y-auto">
+                {rolesList.map(item => {
+                  const isActive = currentUser.role === item.role;
+                  return (
+                    <button
+                      key={item.role}
+                      onClick={() => { switchRole(item.role); setRoleDropdownOpen(false); }}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left transition-all cursor-pointer ${
+                        isActive 
+                          ? 'bg-cyan-500/15 text-cyan-300 font-bold border border-cyan-500/30' 
+                          : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                      }`}
+                    >
+                      <div>
+                        <div className="text-xs font-semibold">{item.title}</div>
+                        <div className="text-[10px] text-slate-400 mt-0.5">{item.desc}</div>
+                      </div>
+                      {isActive && <ShieldCheck size={14} className="text-cyan-400 shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
@@ -206,19 +151,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAIChat, onToggleMobileMenu
         {currentUser.role !== 'TECNICO' && currentUser.role !== 'ATENDENTE' && (
           <button
             onClick={onOpenAIChat}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              padding: '5px 11px',
-              backgroundColor: '#1a2e4a',
-              border: '1px solid #2563eb40',
-              borderRadius: 5,
-              cursor: 'pointer',
-              color: '#93bbf5',
-              fontSize: 12, fontWeight: 600,
-              transition: 'background 0.12s',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#1e3a5f')}
-            onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#1a2e4a')}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/30 rounded-xl text-cyan-300 text-xs font-bold transition-all cursor-pointer shadow-sm"
           >
             <MessageSquare size={13} />
             <span className="hidden sm:inline">Assistente</span>
@@ -229,31 +162,12 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAIChat, onToggleMobileMenu
         {isViewAllowedForRole(currentUser.role, 'alerts') && (
           <button
             onClick={() => setActiveView('alerts')}
-            style={{
-              position: 'relative',
-              padding: '5px 7px',
-              backgroundColor: '#0f1117',
-              border: '1px solid #2a303c',
-              borderRadius: 5,
-              cursor: 'pointer',
-              color: '#9ba3b4',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              transition: 'border-color 0.12s',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.borderColor = '#3a4255')}
-            onMouseLeave={e => (e.currentTarget.style.borderColor = '#2a303c')}
+            className="relative p-2 bg-slate-950 border border-slate-800 hover:border-slate-700 hover:text-slate-200 rounded-xl text-slate-400 flex items-center justify-center transition-all cursor-pointer shadow-sm"
             title="Alertas"
           >
             <Bell size={15} />
             {unreadAlertsCount > 0 && (
-              <span style={{
-                position: 'absolute', top: -4, right: -4,
-                minWidth: 15, height: 15, borderRadius: '50%',
-                backgroundColor: '#dc2626', color: 'white',
-                fontSize: 9, fontWeight: 700,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                lineHeight: 1, padding: '0 2px',
-              }}>
+              <span className="absolute -top-1 -right-1 min-w-[16px] h-4 rounded-full bg-rose-600 text-white text-[9px] font-bold flex items-center justify-center font-mono px-1 shadow-sm">
                 {unreadAlertsCount}
               </span>
             )}
@@ -261,85 +175,56 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAIChat, onToggleMobileMenu
         )}
 
         {/* Perfil */}
-        <div ref={userRef} style={{ position: 'relative' }}>
+        <div ref={userRef} className="relative">
           <button
             onClick={() => { setUserMenuOpen(v => !v); setRoleDropdownOpen(false); }}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 7,
-              padding: '4px 8px 4px 4px',
-              border: '1px solid #2a303c',
-              borderRadius: 5,
-              cursor: 'pointer',
-              background: 'none',
-              transition: 'border-color 0.12s, background 0.12s',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#232830'; e.currentTarget.style.borderColor = '#3a4255'; }}
-            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.borderColor = '#2a303c'; }}
+            className="flex items-center gap-2 p-1 sm:px-2 sm:py-1 bg-slate-950 border border-slate-800 hover:border-slate-700 rounded-xl text-slate-300 transition-all cursor-pointer shadow-sm"
           >
             {currentUser.avatar ? (
               <img
                 src={currentUser.avatar}
                 alt={currentUser.name}
-                style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover' }}
+                className="w-6 h-6 rounded-lg object-cover ring-1 ring-slate-700"
               />
             ) : (
-              <div style={{
-                width: 26, height: 26, borderRadius: '50%',
-                backgroundColor: '#1a2e4a', color: '#93bbf5',
-                fontSize: 10, fontWeight: 700,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                border: '1px solid #2563eb30',
-              }}>
+              <div className="w-6 h-6 rounded-lg bg-cyan-500/15 text-cyan-300 text-[10px] font-bold flex items-center justify-center border border-cyan-500/30">
                 {initials}
               </div>
             )}
-            <div className="hidden sm:block" style={{ textAlign: 'left', lineHeight: 1.3 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: '#c8d0de', maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div className="hidden sm:block text-left leading-tight">
+              <div className="text-xs font-bold text-white max-w-[110px] truncate">
                 {currentUser.name.split(' ')[0]}
               </div>
-              <div style={{ fontSize: 10, color: '#5a6375' }}>
+              <div className="text-[10px] text-slate-500">
                 {ROLE_LABELS[currentUser.role] || currentUser.role}
               </div>
             </div>
-            <ChevronDown size={12} style={{ color: '#5a6375' }} />
+            <ChevronDown size={12} className="text-slate-500 hidden sm:block" />
           </button>
 
           {userMenuOpen && (
-            <div style={{
-              position: 'absolute', right: 0, top: 'calc(100% + 6px)',
-              width: 200,
-              maxWidth: 'calc(100vw - 20px)',
-              backgroundColor: '#161a22',
-              border: '1px solid #2a303c',
-              borderRadius: 8,
-              boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
-              zIndex: 100,
-              overflow: 'hidden',
-            }}>
-              <div style={{ padding: '10px 12px', borderBottom: '1px solid #2a303c' }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: '#e4e8f0' }}>{currentUser.name}</div>
-                <div style={{ fontSize: 10, color: '#93bbf5', marginTop: 1 }}>{ROLE_LABELS[currentUser.role]}</div>
-                <div style={{ fontSize: 10, color: '#5a6375', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentUser.email}</div>
+            <div className="absolute right-0 top-[calc(100%+6px)] w-56 max-w-[calc(100vw-20px)] bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl z-50 overflow-hidden divide-y divide-slate-800/80 p-1.5 space-y-1">
+              <div className="px-3 py-2 bg-slate-950/40 rounded-xl">
+                <div className="text-xs font-bold text-white">{currentUser.name}</div>
+                <div className="text-[10px] font-semibold text-cyan-400 mt-0.5">{ROLE_LABELS[currentUser.role]}</div>
+                <div className="text-[10px] text-slate-500 mt-0.5 truncate">{currentUser.email}</div>
               </div>
               {isViewAllowedForRole(currentUser.role, 'settings') && (
                 <button
                   onClick={() => { setActiveView('settings'); setUserMenuOpen(false); }}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: 'none', border: 'none', cursor: 'pointer', color: '#9ba3b4', fontSize: 12 }}
-                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#232830')}
-                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/70 transition-all cursor-pointer"
                 >
-                  <SlidersHorizontal size={13} style={{ color: '#5a6375' }} />
-                  Configurações
+                  <SlidersHorizontal size={13} className="text-slate-500" />
+                  <span>Configurações</span>
                 </button>
               )}
+              {/* Botão Sair do Sistema Preenchido */}
               <button
                 onClick={() => { logout(); setUserMenuOpen(false); }}
-                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: 'none', border: 'none', cursor: 'pointer', color: '#f87171', fontSize: 12 }}
-                onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#2d1414')}
-                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-rose-600 hover:bg-rose-500 active:scale-[0.98] text-white text-xs font-bold transition-all cursor-pointer shadow-md shadow-rose-950/40 border border-rose-500/50"
               >
                 <LogOut size={13} />
-                Sair do Sistema
+                <span>Sair do Sistema</span>
               </button>
             </div>
           )}

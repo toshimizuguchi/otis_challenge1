@@ -80,51 +80,183 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
     return map[currentUser.role] || 'Dashboard';
   };
 
-  const sections: NavSection[] = currentUser.role === 'TECNICO' ? [
-    { title: 'Meu Espaço', items: [
-      { id: 'dashboard', label: 'Meu Painel', icon: Smartphone },
-      { id: 'calls',     label: 'Minhas Ordens', icon: PhoneCall, count: activeCalls, countType: 'blue' },
-      { id: 'parts',     label: 'Peças & Componentes', icon: Package },
-      { id: 'alerts',    label: 'Alertas', icon: Bell, count: criticalAlerts, countType: 'red' },
-    ]},
-  ] : currentUser.role === 'ATENDENTE' ? [
-    { title: 'Atendimento', items: [
-      { id: 'dashboard',  label: 'Central de Chamados', icon: LayoutDashboard },
-      { id: 'calls',      label: 'Chamados em Aberto', icon: PhoneCall, count: activeCalls, countType: 'blue' },
-      { id: 'equipments', label: 'Equipamentos', icon: Building2 },
-      { id: 'alerts',     label: 'Alertas Críticos', icon: Bell, count: criticalAlerts, countType: 'red' },
-    ]},
-  ] : [
-    { title: currentUser.role === 'PRESIDENTE' ? 'Governança' : 'Operação', items: [
-      { id: 'dashboard',    label: getDashLabel(), icon: LayoutDashboard },
-      ...(currentUser.role === 'PRESIDENTE' ? [
-        { id: 'regional' as ActiveView,     label: 'Desempenho Regional', icon: Globe },
-        { id: 'managers' as ActiveView,     label: 'Gerentes', icon: Users },
-      ] : []),
-      { id: 'intelligence', label: 'Inteligência Operacional', icon: BrainCircuit },
-      { id: 'predictive' as ActiveView, label: 'Predição Andar & Uso', icon: TrendingUp },
-      { id: 'future_iot' as ActiveView, label: 'OTIS ONE & SCADA', icon: Cpu },
-      ...(currentUser.role === 'GERENTE' ? [
-        { id: 'supervisors' as ActiveView, label: 'Supervisores & Equipes', icon: Award },
-      ] : currentUser.role !== 'PRESIDENTE' ? [
-        { id: 'calls' as ActiveView, label: 'Chamados', icon: PhoneCall, count: activeCalls, countType: 'blue' as const },
-      ] : []),
-      ...(currentUser.role !== 'PRESIDENTE' ? [
-        { id: 'equipments' as ActiveView, label: 'Equipamentos', icon: Building2 },
-      ] : []),
-    ]},
-    { title: 'Gestão', items: [
-      { id: 'maps',       label: 'Mapa em Tempo Real', icon: MapPin },
-      { id: 'technicians',label: 'Técnicos & Rotas', icon: Wrench },
-      { id: 'contracts',  label: 'Contratos', icon: FileText },
-      { id: 'financial',  label: 'Financeiro & Margens', icon: DollarSign },
-      { id: 'reports',    label: 'Relatórios', icon: FileSpreadsheet },
-    ]},
-    { title: 'Sistema', items: [
-      { id: 'alerts',   label: 'Alertas', icon: Bell, count: criticalAlerts, countType: 'red' as const },
-      { id: 'settings', label: 'Configurações', icon: Settings },
-    ]},
-  ];
+  const getSectionsByRole = (): NavSection[] => {
+    switch (currentUser.role) {
+      case 'TECNICO':
+        return [
+          {
+            title: 'Meu Espaço',
+            items: [
+              { id: 'dashboard', label: 'Meu Painel', icon: Smartphone },
+              { id: 'calls',     label: 'Minhas Ordens', icon: PhoneCall, count: activeCalls, countType: 'blue' },
+              { id: 'parts',     label: 'Peças & Componentes', icon: Package },
+              { id: 'alerts',    label: 'Alertas', icon: Bell, count: criticalAlerts, countType: 'red' },
+            ]
+          }
+        ];
+
+      case 'ATENDENTE':
+        return [
+          {
+            title: 'Atendimento',
+            items: [
+              { id: 'dashboard',  label: 'Central de Chamados', icon: LayoutDashboard },
+              { id: 'calls',      label: 'Chamados em Aberto', icon: PhoneCall, count: activeCalls, countType: 'blue' },
+              { id: 'equipments', label: 'Equipamentos', icon: Building2 },
+              { id: 'alerts',     label: 'Alertas Críticos', icon: Bell, count: criticalAlerts, countType: 'red' },
+            ]
+          }
+        ];
+
+      case 'SUPERVISOR':
+        return [
+          {
+            title: 'Supervisão de Polo',
+            items: [
+              { id: 'dashboard',   label: 'Painel do Polo', icon: LayoutDashboard },
+              { id: 'calls',       label: 'Chamados & Ordens', icon: PhoneCall, count: activeCalls, countType: 'blue' },
+              { id: 'technicians', label: 'Técnicos & Equipes', icon: Wrench },
+              { id: 'equipments',  label: 'Equipamentos', icon: Building2 },
+            ]
+          },
+          {
+            title: 'Tecnologia & IoT',
+            items: [
+              { id: 'future_iot',   label: 'OTIS ONE & SCADA', icon: Cpu },
+              { id: 'predictive',   label: 'Predição Andar & Uso', icon: TrendingUp },
+              { id: 'intelligence', label: 'SmartFlow IA', icon: BrainCircuit },
+              { id: 'parts',        label: 'Peças & Estoque', icon: Package },
+            ]
+          },
+          {
+            title: 'Operação & Campo',
+            items: [
+              { id: 'maps',    label: 'Radar em Tempo Real', icon: MapPin },
+              { id: 'reports', label: 'Relatórios do Polo', icon: FileSpreadsheet },
+              { id: 'alerts',  label: 'Alertas', icon: Bell, count: criticalAlerts, countType: 'red' },
+            ]
+          }
+        ];
+
+      case 'GERENTE':
+        return [
+          {
+            title: 'Gerência Regional',
+            items: [
+              { id: 'dashboard',   label: 'Painel Gerencial', icon: LayoutDashboard },
+              { id: 'supervisors', label: 'Supervisores & Polos', icon: Award },
+              { id: 'technicians', label: 'Técnicos & Rotas', icon: Wrench },
+              { id: 'contracts',   label: 'Contratos & SLAs', icon: FileText },
+            ]
+          },
+          {
+            title: 'Inteligência & IoT',
+            items: [
+              { id: 'intelligence', label: 'Inteligência Operacional', icon: BrainCircuit },
+              { id: 'predictive',   label: 'Predição Andar & Uso', icon: TrendingUp },
+              { id: 'future_iot',   label: 'OTIS ONE & SCADA', icon: Cpu },
+              { id: 'equipments',   label: 'Parque Instalado', icon: Building2 },
+            ]
+          },
+          {
+            title: 'Resultados & Controle',
+            items: [
+              { id: 'maps',      label: 'Mapa em Tempo Real', icon: MapPin },
+              { id: 'financial', label: 'Financeiro & Margens', icon: DollarSign },
+              { id: 'reports',   label: 'Relatórios Executivos', icon: FileSpreadsheet },
+              { id: 'alerts',    label: 'Alertas Críticos', icon: Bell, count: criticalAlerts, countType: 'red' },
+            ]
+          }
+        ];
+
+      case 'PRESIDENTE':
+        return [
+          {
+            title: 'Governança Executiva',
+            items: [
+              { id: 'dashboard', label: 'Painel Executivo', icon: LayoutDashboard },
+              { id: 'regional',  label: 'Desempenho Regional', icon: Globe },
+              { id: 'managers',  label: 'Gerentes Regionais', icon: Users },
+              { id: 'financial', label: 'Financeiro & Margens', icon: DollarSign },
+            ]
+          },
+          {
+            title: 'Inovação & IA',
+            items: [
+              { id: 'intelligence', label: 'SmartFlow IA', icon: BrainCircuit },
+              { id: 'predictive',   label: 'Predição Andar & Uso', icon: TrendingUp },
+              { id: 'future_iot',   label: 'OTIS ONE & SCADA', icon: Cpu },
+              { id: 'contracts',    label: 'Grandes Contratos', icon: FileText },
+            ]
+          },
+          {
+            title: 'Supervisão Nacional',
+            items: [
+              { id: 'maps',    label: 'Radar Nacional', icon: MapPin },
+              { id: 'reports', label: 'Relatórios da Presidência', icon: FileSpreadsheet },
+              { id: 'alerts',  label: 'Alertas Estratégicos', icon: Bell, count: criticalAlerts, countType: 'red' },
+            ]
+          }
+        ];
+
+      case 'FINANCEIRO':
+        return [
+          {
+            title: 'Controladoria & Finanças',
+            items: [
+              { id: 'dashboard', label: 'Painel Financeiro', icon: LayoutDashboard },
+              { id: 'financial', label: 'Margens & Custos', icon: DollarSign },
+              { id: 'contracts', label: 'Contratos & Faturamento', icon: FileText },
+            ]
+          },
+          {
+            title: 'Governança & RH',
+            items: [
+              { id: 'employees', label: 'Quadro & Folha', icon: Users },
+              { id: 'reports',   label: 'Relatórios Financeiros', icon: FileSpreadsheet },
+            ]
+          }
+        ];
+
+      case 'ADMINISTRADOR':
+      default:
+        return [
+          {
+            title: 'Administração Geral',
+            items: [
+              { id: 'dashboard',   label: 'Painel Executivo', icon: LayoutDashboard },
+              { id: 'regional',    label: 'Desempenho Regional', icon: Globe },
+              { id: 'managers',    label: 'Gerentes', icon: Users },
+              { id: 'supervisors', label: 'Supervisores', icon: Award },
+              { id: 'technicians', label: 'Técnicos & Rotas', icon: Wrench },
+            ]
+          },
+          {
+            title: 'Operação & IoT',
+            items: [
+              { id: 'calls',        label: 'Chamados', icon: PhoneCall, count: activeCalls, countType: 'blue' },
+              { id: 'equipments',   label: 'Equipamentos', icon: Building2 },
+              { id: 'predictive',   label: 'Predição Andar & Uso', icon: TrendingUp },
+              { id: 'future_iot',   label: 'OTIS ONE & SCADA', icon: Cpu },
+              { id: 'intelligence', label: 'SmartFlow IA', icon: BrainCircuit },
+            ]
+          },
+          {
+            title: 'Gestão & Sistema',
+            items: [
+              { id: 'maps',      label: 'Mapa em Tempo Real', icon: MapPin },
+              { id: 'contracts', label: 'Contratos', icon: FileText },
+              { id: 'financial', label: 'Financeiro', icon: DollarSign },
+              { id: 'reports',   label: 'Relatórios', icon: FileSpreadsheet },
+              { id: 'alerts',    label: 'Alertas', icon: Bell, count: criticalAlerts, countType: 'red' },
+              { id: 'settings',  label: 'Configurações', icon: Settings },
+            ]
+          }
+        ];
+    }
+  };
+
+  const sections = getSectionsByRole();
 
   const filtered = sections
     .map(s => ({ ...s, items: s.items.filter(i => isViewAllowedForRole(currentUser.role, i.id)) }))
@@ -244,16 +376,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
         ))}
       </div>
 
-      {/* Logout & Footer */}
-      <div className="p-3 border-t border-slate-800/80 space-y-1">
+      {/* Logout & Footer - Botão Preenchido */}
+      <div className="p-3 border-t border-slate-800/80 space-y-2">
         <button
           onClick={() => { logout(); onCloseMobile?.(); }}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-all cursor-pointer"
+          className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-rose-600 hover:bg-rose-500 active:scale-[0.98] text-white text-xs font-bold shadow-md shadow-rose-950/40 border border-rose-500/50 transition-all cursor-pointer"
         >
-          <LogOut className="w-3.5 h-3.5 shrink-0" />
+          <LogOut className="w-4 h-4 shrink-0" />
           <span>Sair do Sistema</span>
         </button>
-        <div className="px-3 pt-1 text-[10px] text-slate-400 font-mono leading-tight">
+        <div className="text-center text-[10px] text-slate-500 font-mono leading-tight">
           OTIS SmartFlow v2.6 · FIAP Challenge
         </div>
       </div>
