@@ -19,9 +19,9 @@ import {
   Clock,
   Award,
   Globe,
-  ChevronRight,
   TrendingUp,
-  Cpu
+  Cpu,
+  X
 } from 'lucide-react';
 import { TimeClockModal } from '../modals/TimeClockModal';
 
@@ -45,11 +45,6 @@ interface NavSection {
   items: NavItem[];
 }
 
-const COUNT_BADGE: Record<'blue' | 'red', React.CSSProperties> = {
-  blue: { backgroundColor: '#1a2e4a', color: '#93bbf5', border: '1px solid #2563eb30', borderRadius: 3, padding: '1px 6px', fontSize: 10, fontWeight: 700 },
-  red:  { backgroundColor: '#2d1414', color: '#fca5a5', border: '1px solid #dc262630', borderRadius: 3, padding: '1px 6px', fontSize: 10, fontWeight: 700 },
-};
-
 export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseMobile }) => {
   const { activeView, setActiveView, calls, alerts, currentUser, employees, logout } = useApp();
   const [isTimeClockOpen, setIsTimeClockOpen] = useState(false);
@@ -60,19 +55,27 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
     return () => clearInterval(t);
   }, []);
 
-  const activeCalls   = calls.filter(c => c.status !== 'CONCLUIDO' && c.status !== 'CANCELADO').length;
+  const activeCalls = calls.filter(c => c.status !== 'CONCLUIDO' && c.status !== 'CANCELADO').length;
   const criticalAlerts = alerts.filter(a => !a.read && (a.severity === 'CRITICA' || a.category === 'CRITICO')).length;
-  const currentEmp    = employees.find(e => e.id === currentUser.id);
-  const punchStatus   = currentEmp?.currentPunchStatus || 'FORA_DE_TURNO';
+  const currentEmp = employees.find(e => e.id === currentUser.id);
+  const punchStatus = currentEmp?.currentPunchStatus || 'FORA_DE_TURNO';
 
-  const punchColor = punchStatus === 'EM_JORNADA' ? '#16a34a' : punchStatus === 'EM_INTERVALO' ? '#d97706' : '#5a6375';
   const punchLabel = punchStatus === 'EM_JORNADA' ? 'Em Jornada' : punchStatus === 'EM_INTERVALO' ? 'Em Intervalo' : 'Fora de Turno';
+  const punchBadgeClass = punchStatus === 'EM_JORNADA' 
+    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' 
+    : punchStatus === 'EM_INTERVALO' 
+    ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' 
+    : 'bg-slate-800 text-slate-400 border-slate-700';
 
   const getDashLabel = () => {
     const map: Record<string, string> = {
-      TECNICO: 'Meu Painel', SUPERVISOR: 'Painel do Polo',
-      GERENTE: 'Painel Gerencial', ATENDENTE: 'Central de Chamados',
-      FINANCEIRO: 'Financeiro', PRESIDENTE: 'Painel Executivo', ADMINISTRADOR: 'Painel Executivo',
+      TECNICO: 'Meu Painel', 
+      SUPERVISOR: 'Painel do Polo',
+      GERENTE: 'Painel Gerencial', 
+      ATENDENTE: 'Central de Chamados',
+      FINANCEIRO: 'Financeiro', 
+      PRESIDENTE: 'Painel Executivo', 
+      ADMINISTRADOR: 'Painel Executivo',
     };
     return map[currentUser.role] || 'Dashboard';
   };
@@ -127,219 +130,168 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
     .map(s => ({ ...s, items: s.items.filter(i => isViewAllowedForRole(currentUser.role, i.id)) }))
     .filter(s => s.items.length > 0);
 
-  const go = (id: ActiveView) => { setActiveView(id); onCloseMobile?.(); };
+  const go = (id: ActiveView) => { 
+    setActiveView(id); 
+    onCloseMobile?.(); 
+  };
+
   const initials = currentUser.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
 
   const body = (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto' }}>
+    <div className="flex flex-col h-full overflow-y-auto text-slate-300">
       
-      {/* User card */}
-      <div style={{ padding: '12px 12px 10px', borderBottom: '1px solid #1e2431' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+      {/* User Card */}
+      <div className="p-3 border-b border-slate-800/80">
+        <div className="flex items-center gap-2.5">
           {currentUser.avatar ? (
-            <img src={currentUser.avatar} alt={currentUser.name}
-              style={{ width: 34, height: 34, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+            <img 
+              src={currentUser.avatar} 
+              alt={currentUser.name}
+              className="w-9 h-9 rounded-xl object-cover ring-1 ring-slate-700 shrink-0" 
+            />
           ) : (
-            <div style={{
-              width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
-              backgroundColor: '#1a2e4a', color: '#93bbf5',
-              fontSize: 11, fontWeight: 700,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              border: '1px solid #2563eb30'
-            }}>
+            <div className="w-9 h-9 rounded-xl shrink-0 bg-cyan-500/10 text-cyan-300 font-bold text-xs flex items-center justify-center border border-cyan-500/30">
               {initials}
             </div>
           )}
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#e4e8f0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <div className="min-w-0 flex-1">
+            <div className="text-xs font-bold text-white truncate">
               {currentUser.name}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
-              <span style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#16a34a', flexShrink: 0 }} />
-              <span style={{ fontSize: 10, color: '#5a6375' }}>
-                {currentUser.region || currentUser.city || 'Conectado'}
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+              <span className="text-[10px] text-slate-400 truncate">
+                {currentUser.region || currentUser.city || 'Online'}
               </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Ponto eletrônico */}
-      <div style={{ padding: '10px 12px', borderBottom: '1px solid #1e2431' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: '#9ba3b4' }}>
-            <Clock size={12} style={{ color: '#5a6375' }} />
-            Ponto Eletrônico
+      {/* Ponto Eletrônico */}
+      <div className="p-3 border-b border-slate-800/80 space-y-2">
+        <div className="flex items-center justify-between text-xs">
+          <div className="flex items-center gap-1.5 text-slate-400 font-semibold text-[11px]">
+            <Clock className="w-3.5 h-3.5 text-slate-500" />
+            <span>Ponto Eletrônico</span>
           </div>
-          <span style={{ 
-            fontVariantNumeric: 'tabular-nums', fontSize: 11, fontWeight: 700,
-            color: '#93bbf5', letterSpacing: '-0.01em'
-          }}>
+          <span className="font-mono text-xs font-bold text-cyan-400 tracking-tight">
             {time}
           </span>
         </div>
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          backgroundColor: '#0f1117', border: '1px solid #1e2431', borderRadius: 5,
-          padding: '5px 9px', marginBottom: 7
-        }}>
-          <span style={{ fontSize: 10, color: '#5a6375' }}>Status:</span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: punchColor }}>
-            <span style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: punchColor }} />
+
+        <div className="flex items-center justify-between p-2 rounded-xl bg-slate-950 border border-slate-800/90 text-xs">
+          <span className="text-[10px] text-slate-500 uppercase font-semibold">Status:</span>
+          <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border flex items-center gap-1 ${punchBadgeClass}`}>
+            <span className="w-1.5 h-1.5 rounded-full bg-current" />
             {punchLabel}
           </span>
         </div>
+
         <button
           onClick={() => { setIsTimeClockOpen(true); onCloseMobile?.(); }}
-          style={{
-            width: '100%', padding: '7px', borderRadius: 5,
-            backgroundColor: '#1a2e4a', color: '#93bbf5',
-            border: '1px solid #2563eb30',
-            fontSize: 11, fontWeight: 600, cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-            transition: 'background 0.12s',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#1e3a5f')}
-          onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#1a2e4a')}
+          className="w-full py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-[0.98] text-slate-200 text-xs font-semibold flex items-center justify-center gap-2 border border-slate-700/80 transition-all cursor-pointer shadow-sm"
         >
-          <Clock size={12} />
-          Registrar Ponto
+          <Clock className="w-3.5 h-3.5 text-cyan-400" />
+          <span>Registrar Ponto</span>
         </button>
       </div>
 
-      {/* Nav */}
-      <div style={{ flex: 1, padding: '8px 8px' }}>
+      {/* Navigation Sections */}
+      <div className="flex-1 p-2 space-y-3">
         {filtered.map((section, si) => (
-          <div key={si}>
-            {si > 0 && <div style={{ height: 1, backgroundColor: '#1e2431', margin: '6px 4px' }} />}
-            <div style={{
-              fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
-              letterSpacing: '0.08em', color: '#3a4255',
-              padding: '8px 8px 4px'
-            }}>
+          <div key={si} className="space-y-1">
+            <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
               {section.title}
             </div>
-            {section.items.map(item => {
-              const isActive = activeView === item.id;
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => go(item.id)}
-                  style={{
-                    width: '100%', display: 'flex', alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '7px 8px',
-                    borderRadius: 5,
-                    border: 'none',
-                    borderLeft: isActive ? '2px solid #3b82f6' : '2px solid transparent',
-                    paddingLeft: isActive ? 6 : 8,
-                    cursor: 'pointer',
-                    backgroundColor: isActive ? '#1a2e4a' : 'transparent',
-                    color: isActive ? '#93bbf5' : '#9ba3b4',
-                    fontWeight: isActive ? 600 : 400,
-                    fontSize: 12.5,
-                    transition: 'all 0.1s',
-                    marginBottom: 1,
-                  }}
-                  onMouseEnter={e => { if (!isActive) { e.currentTarget.style.backgroundColor = '#1d2129'; e.currentTarget.style.color = '#c8d0de'; }}}
-                  onMouseLeave={e => { if (!isActive) { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#9ba3b4'; }}}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Icon size={14} style={{ color: isActive ? '#3b82f6' : '#5a6375', flexShrink: 0 }} />
-                    <span>{item.label}</span>
-                  </div>
-                  {item.count !== undefined && item.count > 0 && (
-                    <span style={COUNT_BADGE[item.countType || 'blue']}>{item.count}</span>
-                  )}
-                </button>
-              );
-            })}
+
+            <div className="space-y-0.5">
+              {section.items.map(item => {
+                const isActive = activeView === item.id;
+                const Icon = item.icon;
+
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => go(item.id)}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all cursor-pointer ${
+                      isActive
+                        ? 'bg-cyan-500/15 text-cyan-300 font-bold border border-cyan-500/30 shadow-sm'
+                        : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 truncate">
+                      <Icon className={`w-4 h-4 shrink-0 transition-colors ${
+                        isActive ? 'text-cyan-400' : 'text-slate-500'
+                      }`} />
+                      <span className="truncate">{item.label}</span>
+                    </div>
+
+                    {item.count !== undefined && item.count > 0 && (
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono shrink-0 ${
+                        item.countType === 'red'
+                          ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                          : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                      }`}>
+                        {item.count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         ))}
       </div>
 
-      {/* Logout */}
-      <div style={{ borderTop: '1px solid #1e2431', padding: '8px' }}>
+      {/* Logout & Footer */}
+      <div className="p-3 border-t border-slate-800/80 space-y-1">
         <button
           onClick={() => { logout(); onCloseMobile?.(); }}
-          style={{
-            width: '100%', display: 'flex', alignItems: 'center', gap: 8,
-            padding: '7px 8px', borderRadius: 5, border: 'none',
-            cursor: 'pointer', backgroundColor: 'transparent',
-            color: '#f87171', fontSize: 12.5,
-            transition: 'background 0.1s',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#2d1414')}
-          onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-all cursor-pointer"
         >
-          <LogOut size={13} />
-          Sair do Sistema
+          <LogOut className="w-3.5 h-3.5 shrink-0" />
+          <span>Sair do Sistema</span>
         </button>
-        <div style={{ padding: '6px 8px 2px', fontSize: 10, color: '#3a4255', lineHeight: 1.4 }}>
-          OTIS SmartFlow v2.6 · Challenger FIAP
+        <div className="px-3 pt-1 text-[10px] text-slate-400 font-mono leading-tight">
+          OTIS SmartFlow v2.6 · FIAP Challenge
         </div>
       </div>
+
     </div>
   );
 
   return (
     <>
-      {/* Desktop */}
-      <aside
-        className="hidden md:flex md:flex-col"
-        style={{
-          width: 220, flexShrink: 0,
-          backgroundColor: '#161a22',
-          borderRight: '1px solid #2a303c',
-          height: 'calc(100vh - 52px)',
-          position: 'sticky', top: 52,
-          overflowY: 'auto',
-          userSelect: 'none',
-        }}
-      >
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:flex md:flex-col w-56 shrink-0 bg-slate-900/95 border-r border-slate-800/90 h-[calc(100vh-52px)] sticky top-[52px] overflow-y-auto select-none shadow-sm">
         {body}
       </aside>
 
-      {/* Mobile drawer */}
+      {/* Mobile Drawer */}
       {isMobileOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex' }}>
+        <div className="fixed inset-0 z-50 flex">
           <div
             onClick={onCloseMobile}
-            className="backdrop-blur-sm transition-opacity"
-            style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.75)' }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity"
           />
-          <div 
-            className="mobile-drawer-content safe-top safe-bottom shadow-2xl"
-            style={{
-              position: 'relative', zIndex: 10,
-              width: '84%', maxWidth: 280,
-              backgroundColor: '#161a22',
-              borderRight: '1px solid #2a303c',
-              height: '100%', display: 'flex', flexDirection: 'column',
-            }}
-          >
-            <div style={{
-              height: 52, padding: '0 14px',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              borderBottom: '1px solid #2a303c'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ width: 28, height: 28, backgroundColor: '#1d4ed8', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ color: 'white', fontWeight: 800, fontSize: 11 }}>OT</span>
+          <div className="relative z-10 w-[82%] max-w-[280px] bg-slate-900 border-r border-slate-800 h-full flex flex-col shadow-2xl safe-top safe-bottom">
+            <div className="h-[52px] px-4 flex items-center justify-between border-b border-slate-800 shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 bg-cyan-500 rounded-lg flex items-center justify-center font-bold text-slate-950 text-xs">
+                  OT
                 </div>
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#e4e8f0' }}>OTIS SmartFlow</span>
+                <span className="text-xs font-bold text-white">OTIS SmartFlow</span>
               </div>
               <button 
                 onClick={onCloseMobile} 
                 aria-label="Fechar menu lateral"
-                className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800/60 active:scale-95 transition-all touch-manipulation cursor-pointer"
-                style={{ background: 'none', border: 'none' }}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
               >
-                <LogOut size={16} style={{ transform: 'rotate(180deg)' }} />
+                <X className="w-4 h-4" />
               </button>
             </div>
-            <div style={{ flex: 1, overflowY: 'auto' }}>{body}</div>
+            <div className="flex-1 overflow-y-auto">{body}</div>
           </div>
         </div>
       )}
