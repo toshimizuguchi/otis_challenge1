@@ -98,11 +98,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
       case 'ATENDENTE':
         return [
           {
-            title: 'Atendimento',
+            title: 'Central de Operações',
             items: [
               { id: 'dashboard',  label: 'Central de Chamados', icon: LayoutDashboard },
               { id: 'calls',      label: 'Chamados em Aberto', icon: PhoneCall, count: activeCalls, countType: 'blue' },
-              { id: 'equipments', label: 'Equipamentos', icon: Building2 },
+              { id: 'history',    label: 'Histórico de Atendimentos', icon: FileText },
+              { id: 'equipments', label: 'Equipamentos & Edifícios', icon: Building2 },
+            ]
+          },
+          {
+            title: 'Monitoramento & Campo',
+            items: [
+              { id: 'maps',       label: 'Radar em Tempo Real', icon: MapPin },
               { id: 'alerts',     label: 'Alertas Críticos', icon: Bell, count: criticalAlerts, countType: 'red' },
             ]
           }
@@ -116,7 +123,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
               { id: 'dashboard',   label: 'Painel do Polo', icon: LayoutDashboard },
               { id: 'calls',       label: 'Chamados & Ordens', icon: PhoneCall, count: activeCalls, countType: 'blue' },
               { id: 'technicians', label: 'Técnicos & Equipes', icon: Wrench },
-              { id: 'equipments',  label: 'Equipamentos', icon: Building2 },
+              { id: 'history',     label: 'Histórico Operacional', icon: FileText },
+              { id: 'equipments',  label: 'Equipamentos do Polo', icon: Building2 },
+            ]
+          },
+          {
+            title: 'Manutenção & Peças',
+            items: [
+              { id: 'maintenance', label: 'Planos Preventivos', icon: FileSpreadsheet },
+              { id: 'parts',       label: 'Peças & Estoque', icon: Package },
             ]
           },
           {
@@ -125,15 +140,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
               { id: 'future_iot',   label: 'OTIS ONE & SCADA', icon: Cpu },
               { id: 'predictive',   label: 'Predição Andar & Uso', icon: TrendingUp },
               { id: 'intelligence', label: 'SmartFlow IA', icon: BrainCircuit },
-              { id: 'parts',        label: 'Peças & Estoque', icon: Package },
             ]
           },
           {
             title: 'Operação & Campo',
             items: [
-              { id: 'maps',    label: 'Radar em Tempo Real', icon: MapPin },
-              { id: 'reports', label: 'Relatórios do Polo', icon: FileSpreadsheet },
-              { id: 'alerts',  label: 'Alertas', icon: Bell, count: criticalAlerts, countType: 'red' },
+              { id: 'maps',     label: 'Radar em Tempo Real', icon: MapPin },
+              { id: 'training', label: 'Treinamentos da Equipe', icon: Award },
+              { id: 'reports',  label: 'Relatórios do Polo', icon: FileSpreadsheet },
+              { id: 'alerts',   label: 'Alertas', icon: Bell, count: criticalAlerts, countType: 'red' },
             ]
           }
         ];
