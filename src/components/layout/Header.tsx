@@ -61,7 +61,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAIChat, onToggleMobileMenu
   return (
     <header className="h-[52px] px-2.5 sm:px-4 safe-top bg-slate-900/95 border-b border-slate-800/90 flex items-center justify-between sticky top-0 z-30 gap-2 backdrop-blur-md">
       {/* LEFT — logo + mobile trigger */}
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-2.5 shrink-0 min-w-[220px]">
         {onToggleMobileMenu && (
           <button
             className="md:hidden p-1.5 text-slate-400 hover:text-white active:scale-95 transition-all touch-manipulation cursor-pointer rounded-lg hover:bg-slate-800"

@@ -131,7 +131,7 @@ const MainLayout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#0f1117', color: '#e4e8f0', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
+    <div className="h-screen flex flex-col overflow-hidden" style={{ backgroundColor: '#0f1117', color: '#e4e8f0', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
       {/* Top Header */}
       <Header 
         onOpenAIChat={() => setIsAIChatOpen(true)} 
