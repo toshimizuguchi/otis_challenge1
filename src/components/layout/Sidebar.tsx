@@ -302,28 +302,37 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
         <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex' }}>
           <div
             onClick={onCloseMobile}
+            className="backdrop-blur-sm transition-opacity"
             style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.75)' }}
           />
-          <div style={{
-            position: 'relative', zIndex: 10,
-            width: '80%', maxWidth: 260,
-            backgroundColor: '#161a22',
-            borderRight: '1px solid #2a303c',
-            height: '100%', display: 'flex', flexDirection: 'column',
-          }}>
+          <div 
+            className="mobile-drawer-content safe-top safe-bottom shadow-2xl"
+            style={{
+              position: 'relative', zIndex: 10,
+              width: '84%', maxWidth: 280,
+              backgroundColor: '#161a22',
+              borderRight: '1px solid #2a303c',
+              height: '100%', display: 'flex', flexDirection: 'column',
+            }}
+          >
             <div style={{
               height: 52, padding: '0 14px',
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               borderBottom: '1px solid #2a303c'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ width: 26, height: 26, backgroundColor: '#1d4ed8', borderRadius: 5, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ color: 'white', fontWeight: 800, fontSize: 10 }}>OT</span>
+                <div style={{ width: 28, height: 28, backgroundColor: '#1d4ed8', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ color: 'white', fontWeight: 800, fontSize: 11 }}>OT</span>
                 </div>
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#e4e8f0' }}>SmartFlow</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#e4e8f0' }}>OTIS SmartFlow</span>
               </div>
-              <button onClick={onCloseMobile} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#5a6375', padding: 4 }}>
-                <LogOut size={15} style={{ transform: 'rotate(180deg)' }} />
+              <button 
+                onClick={onCloseMobile} 
+                aria-label="Fechar menu lateral"
+                className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800/60 active:scale-95 transition-all touch-manipulation cursor-pointer"
+                style={{ background: 'none', border: 'none' }}
+              >
+                <LogOut size={16} style={{ transform: 'rotate(180deg)' }} />
               </button>
             </div>
             <div style={{ flex: 1, overflowY: 'auto' }}>{body}</div>

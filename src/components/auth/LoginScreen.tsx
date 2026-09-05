@@ -40,11 +40,14 @@ export const LoginScreen: React.FC = () => {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh', backgroundColor: '#0f1117',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: 24, fontFamily: "'Inter', -apple-system, sans-serif"
-    }}>
+    <div 
+      className="p-3 sm:p-6 safe-top safe-bottom"
+      style={{
+        minHeight: '100vh', backgroundColor: '#0f1117',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontFamily: "'Inter', -apple-system, sans-serif"
+      }}
+    >
       <div style={{ width: '100%', maxWidth: 880, display: 'flex', borderRadius: 10, overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.7)' }}>
         
         {/* Painel esquerdo */}
@@ -101,7 +104,7 @@ export const LoginScreen: React.FC = () => {
         </div>
 
         {/* Formulário */}
-        <div style={{ flex: 1, backgroundColor: '#161a22', padding: '36px 32px' }}>
+        <div className="p-4 sm:p-8" style={{ flex: 1, backgroundColor: '#161a22' }}>
           {/* Mobile logo */}
           <div className="flex lg:hidden" style={{ alignItems: 'center', gap: 8, marginBottom: 24 }}>
             <div style={{ width: 30, height: 30, backgroundColor: '#2563eb', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -190,7 +193,7 @@ export const LoginScreen: React.FC = () => {
           </div>
 
           {/* Demo grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))', gap: 6 }}>
             {DEMO_USERS.map(user => {
               const color = ROLE_COLOR[user.role] || '#374151';
               const firstName = user.name.split(' ')[0];

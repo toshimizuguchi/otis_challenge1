@@ -751,13 +751,13 @@ export const MapsModule: React.FC = () => {
           </div>
 
           {/* OpenStreetMap + Leaflet Canvas Container */}
-          <div className="relative w-full rounded-2xl overflow-hidden border border-slate-800 shadow-2xl bg-slate-950 min-h-[460px] sm:min-h-[540px]">
+          <div className="relative w-full rounded-2xl overflow-hidden border border-slate-800 shadow-2xl bg-slate-950 min-h-[340px] sm:min-h-[460px] md:min-h-[540px]">
             
             {/* The actual Leaflet DOM mount node */}
             <div 
               ref={mapContainerRef} 
-              className="w-full h-[460px] sm:h-[540px] z-0"
-              style={{ minHeight: '460px' }}
+              className="w-full h-[340px] sm:h-[460px] md:h-[540px] z-0"
+              style={{ minHeight: '340px' }}
             />
 
             {/* Floating Quick Legend in Map Bottom Left */}

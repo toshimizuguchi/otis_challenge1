@@ -59,35 +59,37 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAIChat, onToggleMobileMenu
   const initials = currentUser.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
 
   return (
-    <header style={{
-      height: 52,
-      backgroundColor: '#161a22',
-      borderBottom: '1px solid #2a303c',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '0 16px',
-      position: 'sticky',
-      top: 0,
-      zIndex: 30,
-      gap: 12,
-    }}>
+    <header 
+      className="px-2.5 sm:px-4 safe-top"
+      style={{
+        height: 52,
+        backgroundColor: '#161a22',
+        borderBottom: '1px solid #2a303c',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        position: 'sticky',
+        top: 0,
+        zIndex: 30,
+        gap: 8,
+      }}
+    >
       {/* LEFT — logo + mobile trigger */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
         {onToggleMobileMenu && (
           <button
-            className="md:hidden"
+            className="md:hidden p-1.5 text-zinc-400 hover:text-zinc-200 active:scale-95 transition-all touch-manipulation cursor-pointer"
             onClick={onToggleMobileMenu}
-            style={{ padding: '6px', color: '#9ba3b4', background: 'none', border: 'none', cursor: 'pointer', borderRadius: 4 }}
+            style={{ background: 'none', border: 'none', borderRadius: 6 }}
             aria-label="Menu"
           >
-            <Menu size={18} />
+            <Menu size={20} />
           </button>
         )}
 
         {/* Logo mark */}
         <div style={{
-          width: 30, height: 30,
+          width: 28, height: 28,
           backgroundColor: '#1d4ed8',
           borderRadius: 6,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -98,7 +100,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAIChat, onToggleMobileMenu
 
         <div style={{ lineHeight: 1.2 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: '#e4e8f0', letterSpacing: '-0.02em' }}>
-            OTIS SmartFlow
+            OTIS <span className="hidden xs:inline">SmartFlow</span>
           </div>
           <div className="hidden md:block" style={{ fontSize: 10, color: '#5a6375', fontWeight: 500 }}>
             Gestão de Elevadores & Contratos
@@ -129,12 +131,13 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAIChat, onToggleMobileMenu
         <div ref={roleRef} style={{ position: 'relative' }}>
           <button
             onClick={() => { setRoleDropdownOpen(v => !v); setUserMenuOpen(false); }}
+            className="touch-manipulation"
             style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              padding: '5px 10px',
+              display: 'flex', alignItems: 'center', gap: 5,
+              padding: '5px 8px',
               backgroundColor: '#0f1117',
               border: '1px solid #2a303c',
-              borderRadius: 5,
+              borderRadius: 6,
               cursor: 'pointer',
               color: '#9ba3b4',
               fontSize: 12,
@@ -143,16 +146,20 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAIChat, onToggleMobileMenu
             }}
             onMouseEnter={e => (e.currentTarget.style.borderColor = '#3b82f6')}
             onMouseLeave={e => (e.currentTarget.style.borderColor = '#2a303c')}
+            title="Trocar perfil"
           >
-            <span style={{ fontSize: 10, color: '#5a6375' }}>Perfil:</span>
-            <span style={{ fontWeight: 600, color: '#93bbf5' }}>{ROLE_LABELS[currentUser.role] || currentUser.role}</span>
-            <ChevronDown size={13} style={{ color: '#5a6375' }} />
+            <span className="hidden sm:inline" style={{ fontSize: 10, color: '#5a6375' }}>Perfil:</span>
+            <span className="truncate max-w-[82px] sm:max-w-none" style={{ fontWeight: 600, color: '#93bbf5' }}>
+              {ROLE_LABELS[currentUser.role] || currentUser.role}
+            </span>
+            <ChevronDown size={12} style={{ color: '#5a6375', flexShrink: 0 }} />
           </button>
 
           {roleDropdownOpen && (
             <div style={{
               position: 'absolute', right: 0, top: 'calc(100% + 6px)',
               width: 240,
+              maxWidth: 'calc(100vw - 20px)',
               backgroundColor: '#161a22',
               border: '1px solid #2a303c',
               borderRadius: 8,
@@ -301,6 +308,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAIChat, onToggleMobileMenu
             <div style={{
               position: 'absolute', right: 0, top: 'calc(100% + 6px)',
               width: 200,
+              maxWidth: 'calc(100vw - 20px)',
               backgroundColor: '#161a22',
               border: '1px solid #2a303c',
               borderRadius: 8,

@@ -201,7 +201,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   const navItems = getNavItems();
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-zinc-950/95 backdrop-blur-lg border-t border-zinc-800 shadow-[0_-8px_20px_rgba(0,0,0,0.5)] px-2 py-1.5 safe-bottom">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#161a22]/95 backdrop-blur-md border-t border-[#2a303c] shadow-[0_-8px_24px_rgba(0,0,0,0.6)] px-2 py-1.5 safe-bottom">
       <div className="flex items-center justify-around gap-1 max-w-md mx-auto">
         {navItems.map((item) => {
           const isActive = activeView === item.id;
@@ -211,8 +211,8 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
               onClick={() => setActiveView(item.id)}
               className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-xl transition-all relative min-h-[48px] touch-manipulation cursor-pointer ${
                 isActive
-                  ? 'text-cyan-300 font-bold bg-cyan-950/40 border border-cyan-500/30 shadow-inner'
-                  : 'text-zinc-400 hover:text-zinc-200 active:scale-95'
+                  ? 'text-[#93bbf5] font-bold bg-[#1a2e4a] border border-[#2563eb]/40 shadow-inner'
+                  : 'text-[#8a94a6] hover:text-[#e4e8f0] active:scale-95'
               }`}
             >
               <div className="relative">
@@ -223,11 +223,11 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
                   </span>
                 )}
               </div>
-              <span className="text-[10px] mt-1 tracking-tight truncate max-w-[64px]">
+              <span className="text-[10px] mt-0.5 tracking-tight truncate max-w-[68px]">
                 {item.label}
               </span>
               {isActive && (
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 absolute bottom-0.5 shadow-sm shadow-cyan-400" />
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 absolute bottom-0.5 shadow-sm shadow-blue-400/50" />
               )}
             </button>
           );
@@ -236,10 +236,10 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
         {/* Menu Hamburger Trigger for Drawer */}
         <button
           onClick={onToggleMobileMenu}
-          className="flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-xl text-zinc-400 hover:text-zinc-200 active:scale-95 transition-all min-h-[48px] touch-manipulation cursor-pointer"
+          className="flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-xl text-[#8a94a6] hover:text-[#e4e8f0] active:scale-95 transition-all min-h-[48px] touch-manipulation cursor-pointer"
         >
-          <Menu className="w-5 h-5 text-zinc-300" />
-          <span className="text-[10px] mt-1 tracking-tight text-zinc-300">
+          <Menu className="w-5 h-5 text-[#8a94a6]" />
+          <span className="text-[10px] mt-0.5 tracking-tight text-[#8a94a6]">
             Menu
           </span>
         </button>

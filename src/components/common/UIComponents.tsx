@@ -204,11 +204,15 @@ export const ToastContainer: React.FC<{
   };
 
   return (
-    <div style={{
-      position: 'fixed', bottom: 20, right: 20, zIndex: 9999,
-      display: 'flex', flexDirection: 'column', gap: 8,
-      maxWidth: 380, width: '100%', pointerEvents: 'none'
-    }}>
+    <div 
+      className="toast-container-root"
+      style={{
+        position: 'fixed', bottom: 20, right: 20, zIndex: 9999,
+        display: 'flex', flexDirection: 'column', gap: 8,
+        maxWidth: 380, width: '100%', pointerEvents: 'none',
+        transition: 'bottom 0.2s ease'
+      }}
+    >
       {toasts.map((toast) => {
         const tc = typeConfig[toast.type];
         return (

@@ -430,12 +430,61 @@ button[class*="from-cyan-5"][class*="to-blue-6"] {
 }
 
 /* ================================================================
-   MOBILE
+   MOBILE & SAFE AREA
    ================================================================ */
+.safe-bottom {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 8px)) !important;
+}
+
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0px) !important;
+}
+
+/* Touch targets & responsive behaviors */
+button, a, input, select, textarea {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
 @media (max-width: 768px) {
   h1 { font-size: 17px !important; }
   h2, h3 { font-size: 13px !important; }
+
+  /* Prevent automatic zoom on iOS inputs */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Smooth scrolling on mobile horizontal and vertical scrolls */
+  .overflow-y-auto, .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Reposition floating toast notifications above mobile bottom bar */
+  .toast-container-root {
+    bottom: calc(env(safe-area-inset-bottom, 8px) + 68px) !important;
+    left: 12px !important;
+    right: 12px !important;
+    max-width: calc(100vw - 24px) !important;
+  }
+
+  /* Custom drawer slide animation */
+  @keyframes slideInFromLeft {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  .mobile-drawer-content {
+    animation: slideInFromLeft 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
 }
+
 
 /* ================================================================
    LEAFLET & OPENSTREETMAP CUSTOM THEME

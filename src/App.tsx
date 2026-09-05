@@ -146,7 +146,7 @@ const MainLayout: React.FC = () => {
         />
 
         {/* Content Area */}
-        <main className="flex-1 overflow-y-auto pb-24 md:pb-6" style={{ backgroundColor: '#0f1117', padding: '20px 24px' }}>
+        <main className="flex-1 overflow-y-auto pb-28 md:pb-6 px-3 py-3.5 sm:px-4 sm:py-4 md:px-6 md:py-5" style={{ backgroundColor: '#0f1117' }}>
           <div style={{ maxWidth: 1280, margin: '0 auto' }}>
             {renderViewContent()}
           </div>

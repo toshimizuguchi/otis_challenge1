@@ -767,9 +767,9 @@ export const CreateCallModal: React.FC<CreateCallModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
       <div
-        className="relative w-full max-w-5xl bg-slate-900 border border-slate-800 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]"
+        className="relative w-full max-w-5xl bg-slate-900 border border-slate-800 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[96vh] sm:max-h-[92vh]"
         onClick={e => e.stopPropagation()}
       >
         {/* Modal Header */}
@@ -2123,20 +2123,20 @@ export const CreateCallModal: React.FC<CreateCallModalProps> = ({
           </div>
 
           {/* Modal Footer / Action Buttons */}
-          <div className="pt-4 border-t border-slate-800 flex items-center justify-between gap-4 sticky bottom-0 bg-slate-900/95 py-3 -mx-4 -mb-4 px-4 sm:-mx-6 sm:-mb-6 sm:px-6 z-10 backdrop-blur-md">
+          <div className="pt-3.5 sm:pt-4 border-t border-slate-800 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2.5 sm:gap-4 sticky bottom-0 bg-slate-900/95 py-3 -mx-4 -mb-4 px-4 sm:-mx-6 sm:-mb-6 sm:px-6 z-10 backdrop-blur-md">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs sm:text-sm font-bold transition-colors cursor-pointer"
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs sm:text-sm font-bold transition-colors cursor-pointer text-center min-h-[42px] touch-manipulation"
             >
               Cancelar
             </button>
 
             <button
               type="submit"
-              className="px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-500 hover:from-cyan-400 hover:to-indigo-400 text-slate-950 font-extrabold text-xs sm:text-sm shadow-xl shadow-cyan-500/20 flex items-center gap-2 transition-all cursor-pointer hover:scale-[1.01]"
+              className="w-full sm:w-auto px-5 sm:px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-500 hover:from-cyan-400 hover:to-indigo-400 text-slate-950 font-extrabold text-xs sm:text-sm shadow-xl shadow-cyan-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[46px] touch-manipulation"
             >
-              <Send className="w-4 h-4" />
+              <Send className="w-4 h-4 shrink-0" />
               <span>Abrir Chamado & Despachar Técnico(s)</span>
             </button>
           </div>
