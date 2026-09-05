@@ -35,6 +35,7 @@ import { TechHistoryModule } from './components/modules/TechHistoryModule';
 import { EmployeesModule } from './components/modules/EmployeesModule';
 import { RegionalPerformanceModule } from './components/modules/RegionalPerformanceModule';
 import { ManagersPerformanceModule } from './components/modules/ManagersPerformanceModule';
+import { PredictiveAnalyticsModule } from './components/modules/PredictiveAnalyticsModule';
 
 const MainLayout: React.FC = () => {
   const { currentUser, isLoggedIn, activeView, toasts, removeToast, theme } = useApp();
@@ -118,6 +119,8 @@ const MainLayout: React.FC = () => {
         return <DataImportModule />;
       case 'future_iot':
         return <FutureIoTModule />;
+      case 'predictive':
+        return <PredictiveAnalyticsModule />;
       case 'settings':
         return <SettingsModule />;
       case 'reports':

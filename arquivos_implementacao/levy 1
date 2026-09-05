@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCADA Pro - Centro de Monitoramento Industrial</title>
+    <style>
+        /* CSS Reset & Variables */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg-dark: #0a0e17;
+            --bg-card: rgba(18, 26, 43, 0.75);
+            --bg-card-hover: rgba(26, 37, 61, 0.85);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-highlight: rgba(6, 182, 212, 0.3);
+            
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            
+            --cyan-neon: #06b6d4;
+            --cyan-glow: rgba(6, 182, 212, 0.4);
+            --red-alert: #ef4444;
+            --red-glow: rgba(239, 68, 68, 0.4);
+            --amber-warn: #f59e0b;
+            --amber-glow: rgba(245, 158, 11, 0.3);
+            --green-ok: #10b981;
+            --green-glow: rgba(16, 185, 129, 0.3);
+            --blue-cold: #3b82f6;
+            --blue-glow: rgba(59, 130, 246, 0.4);
+
+            --font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-family);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(6, 182, 212, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(59, 130, 246, 0.05) 0%, transparent 40%);
+        }
+
+        /* Header / Control Center */
+        .header {
+            background: rgba(10, 14, 23, 0.9);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, var(--cyan-neon), var(--blue-cold));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 12px var(--cyan-glow);
+        }
+
+        .logo-icon svg {
+            width: 22px;
+            height: 22px;
+            stroke: #ffffff;
+        }
+
+        .header-title h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            background: linear-gradient(to right, #ffffff, var(--text-muted));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.6rem;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: var(--green-ok);
+            font-weight: 600;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--green-ok);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--green-ok);
+            animation: pulse 1.8s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 12px var(--green-ok); }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .clock-container {
+            text-align: right;
+            font-family: monospace;
+        }
+
+        .clock-date {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .clock-time {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--cyan-neon);
+            text-shadow: 0 0 8px var(--cyan-glow);
+        }
+
+        .btn-export {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(59, 130, 246, 0.2));
+            border: 1px solid var(--cyan-neon);
+            color: var(--text-main);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-export:hover {
+            background: var(--cyan-neon);
+            color: #000;
+            box-shadow: 0 0 15px var(--cyan-glow);
+        }
+
+        .btn-export svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Nav Tabs */
+        .tabs-nav {
+            display: flex;
+            gap: 0.5rem;
+            padding: 1rem 1.5rem 0 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.6rem 1.2rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-main);
+        }
+
+        .tab-btn.active {
+            color: var(--cyan-neon);
+            border-bottom-color: var(--cyan-neon);
+        }
+
+        .tab-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Container Main */
+        .main-content {
+            padding: 1.5rem;
+            flex: 1;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Grid Layout */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 1.25rem;
+        }
+
+        /* Cards Base */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.25rem;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+            animation: cardEntrance 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: translateY(15px);
+        }
+
+        .card:hover {
+            border-color: var(--border-highlight);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .card-title-group {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .card-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .card-icon svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .card-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .card-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .badge-alert {
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-amber {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--amber-warn);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+        }
+
+        .badge-blue {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--blue-cold);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            box-shadow: 0 0 10px var(--blue-glow);
+        }
+
+        .badge-red {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--red-alert);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            animation: blink 1.5s infinite alternate;
+        }
+
+        @keyframes blink {
+            from { opacity: 0.7; }
+            to { opacity: 1; box-shadow: 0 0 10px var(--red-glow); }
+        }
+
+        /* Specific Grid Spans */
+        .col-span-12 { grid-column: span 12; }
+        .col-span-6  { grid-column: span 6; }
+        .col-span-4  { grid-column: span 4; }
+
+        @media (max-width: 1024px) {
+            .col-span-6, .col-span-4 { grid-column: span 12; }
+        }
+
+        /* Card Content Components */
+        
+        /* 1. Seismic Card */
+        .seismic-metric {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .metric-value {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #fff;
+            line-height: 1;
+        }
+
+        .metric-unit {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .canvas-container {
+            width: 100%;
+            height: 90px;
+            margin-top: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            position: relative;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 2. Cold Warning Card (Sul) */
+        .temp-display {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 1rem 0;
+            padding: 0.75rem 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            border-left: 4px solid var(--blue-cold);
+        }
+
+        .temp-info {
+            display: flex;
+            align-items: baseline;
+            gap: 0.25rem;
+        }
+
+        .protection-active-box {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.6rem 0.8rem;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px dashed var(--blue-cold);
+            border-radius: 6px;
+            margin-top: 0.75rem;
+            font-size: 0.8rem;
+            color: #93c5fd;
+        }
+
+        /* 3. Humidity/Corrosion Card */
+        .gauge-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0.5rem 0;
+            position: relative;
+        }
+
+        .gauge-canvas-box {
+            position: relative;
+            width: 120px;
+            height: 120px;
+        }
+
+        .gauge-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .gauge-percentage {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .corrosion-warning {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            padding: 0.5rem;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 6px;
+            color: #fca5a5;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        /* 4. Sensor Table Card */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            margin-top: 0.5rem;
+        }
+
+        .sensor-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.85rem;
+        }
+
+        .sensor-table th {
+            padding: 0.75rem 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .sensor-table td {
+            padding: 0.85rem 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            color: var(--text-main);
+        }
+
+        .sensor-table tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            max-width: 140px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.6s ease;
+        }
+
+        .fill-red { background: linear-gradient(90deg, #f87171, var(--red-alert)); }
+        .fill-amber { background: linear-gradient(90deg, #fbbf24, var(--amber-warn)); }
+        .fill-green { background: linear-gradient(90deg, #34d399, var(--green-ok)); }
+
+        .action-tag {
+            display: inline-block;
+            padding: 0.25rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .action-urgent {
+            background: rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .action-medium {
+            background: rgba(245, 158, 11, 0.15);
+            color: #fde047;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .action-low {
+            background: rgba(16, 185, 129, 0.15);
+            color: #6ee7b7;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        /* Event Log Table */
+        .log-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .log-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.85rem 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .log-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .log-time {
+            font-family: monospace;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .log-msg {
+            color: var(--text-main);
+            font-weight: 500;
+        }
+
+        .log-location {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        /* Toast Modal Simulation */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: #1e293b;
+            border: 1px solid var(--cyan-neon);
+            color: var(--text-main);
+            padding: 1rem 1.25rem;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5), 0 0 15px var(--cyan-glow);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            z-index: 100;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Keyframes for Staggered Cards */
+        @keyframes cardEntrance {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card:nth-child(1) { animation-delay: 0.05s; }
+        .card:nth-child(2) { animation-delay: 0.15s; }
+        .card:nth-child(3) { animation-delay: 0.25s; }
+        .card:nth-child(4) { animation-delay: 0.35s; }
+
+        /* Quick Info Bar */
+        .info-pills {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .info-pill-item {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        /* Footer */
+        .footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(10, 14, 23, 0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header / Centro de Controle -->
+    <header class="header">
+        <div class="header-title">
+            <div class="logo-icon">
+                <svg fill="none; stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+            </div>
+            <div>
+                <h1>SCADA Industrial Monitor</h1>
+                <div class="status-badge">
+                    <span class="pulse-dot"></span>
+                    <span>SISTEMA OPERACIONAL</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="header-controls">
+            <div class="clock-container">
+                <div class="clock-date" id="current-date">2026-09-04</div>
+                <div class="clock-time" id="current-time">14:32:08 UTC</div>
+            </div>
+            <button class="btn-export" onclick="exportReport()">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                </svg>
+                Exportar Relatório
+            </button>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="tabs-nav">
+        <button class="tab-btn active" onclick="switchTab('visao-geral', this)">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+            </svg>
+            Visão Geral
+        </button>
+        <button class="tab-btn" onclick="switchTab('log-eventos', this)">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+            </svg>
+            Log de Eventos
+        </button>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+
+        <!-- TAB 1: VISÃO GERAL -->
+        <div id="tab-visao-geral" class="tab-content active">
+            <div class="dashboard-grid">
+
+                <!-- 1. Alerta de Risco Sísmico (México) -->
+                <section class="card col-span-4">
+                    <div class="card-header">
+                        <div class="card-title-group">
+                            <div class="card-icon" style="color: var(--amber-warn);">
+                                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h2 class="card-title">Risco Sísmico</h2>
+                                <p class="card-subtitle">Planta Oaxaca - México</p>
+                            </div>
+                        </div>
+                        <span class="badge-alert badge-amber">Monitorando</span>
+                    </div>
+
+                    <div class="seismic-metric">
+                        <span class="metric-value">5.2</span>
+                        <span class="metric-unit">Mw (Magnitude)</span>
+                    </div>
+
+                    <div class="info-pills">
+                        <div class="info-pill-item">
+                            <span>Profundidade: <strong>18 km</strong></span>
+                        </div>
+                        <div class="info-pill-item">
+                            <span>Frequência: <strong>1.4 Hz</strong></span>
+                        </div>
+                    </div>
+
+                    <div class="canvas-container">
+                        <canvas id="seismographCanvas"></canvas>
+                    </div>
+                </section>
+
+                <!-- 2. Alerta de Padrão Sazonal (Frio Sul do Brasil) -->
+                <section class="card col-span-4">
+                    <div class="card-header">
+                        <div class="card-title-group">
+                            <div class="card-icon" style="color: var(--blue-cold);">
+                                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v18m9-9H3m15.364 6.364l-12.728-12.728m12.728 0L5.636 18.364"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h2 class="card-title">Padrão Sazonal Frio</h2>
+                                <p class="card-subtitle">Unidade Curitiba - Brasil</p>
+                            </div>
+                        </div>
+                        <span class="badge-alert badge-blue">Proteção Ativa</span>
+                    </div>
+
+                    <div class="temp-display">
+                        <div>
+                            <span class="card-subtitle">Temperatura Atual</span>
+                            <div class="temp-info">
+                                <span class="metric-value" style="color: #93c5fd;">6.4</span>
+                                <span class="metric-unit">°C</span>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span class="card-subtitle">Limiar de Alerta</span>
+                            <div style="font-weight: 700; color: var(--text-muted);">&lt; 8.0 °C</div>
+                        </div>
+                    </div>
+
+                    <div class="protection-active-box">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
+                        <span>Aquecimento de tubulações acionado preventivamente.</span>
+                    </div>
+                </section>
+
+                <!-- 3. Alerta de Desgaste (Litoral / Umidade) -->
+                <section class="card col-span-4">
+                    <div class="card-header">
+                        <div class="card-title-group">
+                            <div class="card-icon" style="color: var(--red-alert);">
+                                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L5.6 15.12a2 2 0 00-1.183.12l-1.002.401a1 1 0 00-.547 1.252l.2.5a2 2 0 00.584.878l1.328 1.107a6 6 0 003.86.517l.318-.158a6 6 0 013.86-.517l2.387.477a2 2 0 001.022-.053l1.102-.367a2 2 0 00.912-.663l.872-1.09a2 2 0 00.126-1.872l-.318-.636z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h2 class="card-title">Umidade / Salinidade</h2>
+                                <p class="card-subtitle">Terminal Santos - Litoral</p>
+                            </div>
+                        </div>
+                        <span class="badge-alert badge-red">Risco Crítico</span>
+                    </div>
+
+                    <div class="gauge-wrapper">
+                        <div class="gauge-canvas-box">
+                            <canvas id="humidityGaugeCanvas" width="120" height="120"></canvas>
+                            <div class="gauge-text">
+                                <div class="gauge-percentage">88%</div>
+                                <div style="font-size: 0.65rem; color: var(--text-muted);">UR Ar</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="corrosion-warning">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                        <span>ALERTA: Risco Elevado de Corrosão</span>
+                    </div>
+                </section>
+
+                <!-- 4. Tabela de Prioridade de Upgrade de Sensores -->
+                <section class="card col-span-12">
+                    <div class="card-header">
+                        <div class="card-title-group">
+                            <div class="card-icon" style="color: var(--cyan-neon);">
+                                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h2 class="card-title">Fila de Prioridade: Upgrade e Manutenção de Sensores</h2>
+                                <p class="card-subtitle">Análise preditiva baseada em ciclos operacionais e desgaste físico</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="sensor-table">
+                            <thead>
+                                <tr>
+                                    <th>ID / Sensor</th>
+                                    <th>Localização</th>
+                                    <th>Tipo de Medição</th>
+                                    <th>Nível de Desgaste</th>
+                                    <th>Ação Recomendada</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>SN-8821-LIT</strong></td>
+                                    <td>Terminal Santos (Cais 2)</td>
+                                    <td>Higrômetro / Salinidade</td>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                            <div class="progress-bar-bg">
+                                                <div class="progress-bar-fill fill-red" style="width: 92%;"></div>
+                                            </div>
+                                            <span style="font-weight: 700; color: var(--red-alert);">92%</span>
+                                        </div>
+                                    </td>
+                                    <td><span class="action-tag action-urgent">Substituição Imediata</span></td>
+                                    <td><span style="color: var(--red-alert); font-weight: 600;">Crítico</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>SN-4109-MEX</strong></td>
+                                    <td>Oaxaca (Setor B3)</td>
+                                    <td>Sismógrafo Piezoelétrico</td>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                            <div class="progress-bar-bg">
+                                                <div class="progress-bar-fill fill-amber" style="width: 74%;"></div>
+                                            </div>
+                                            <span style="font-weight: 700; color: var(--amber-warn);">74%</span>
+                                        </div>
+                                    </td>
+                                    <td><span class="action-tag action-medium">Calibração & Troca de Rótula</span></td>
+                                    <td><span style="color: var(--amber-warn); font-weight: 600;">Atenção</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>SN-1022-SUL</strong></td>
+                                    <td>Curitiba (Linha de Vapores)</td>
+                                    <td>Sensor Térmico PT100</td>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                            <div class="progress-bar-bg">
+                                                <div class="progress-bar-fill fill-amber" style="width: 61%;"></div>
+                                            </div>
+                                            <span style="font-weight: 700; color: var(--amber-warn);">61%</span>
+                                        </div>
+                                    </td>
+                                    <td><span class="action-tag action-medium">Manutenção Programada</span></td>
+                                    <td><span style="color: var(--amber-warn); font-weight: 600;">Agendado</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>SN-9044-LIT</strong></td>
+                                    <td>Santos (Tanque Reservatório)</td>
+                                    <td>Pressão Hidrostática</td>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                            <div class="progress-bar-bg">
+                                                <div class="progress-bar-fill fill-green" style="width: 28%;"></div>
+                                            </div>
+                                            <span style="font-weight: 700; color: var(--green-ok);">28%</span>
+                                        </div>
+                                    </td>
+                                    <td><span class="action-tag action-low">Inspeção Preventiva</span></td>
+                                    <td><span style="color: var(--green-ok); font-weight: 600;">Normal</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+
+        <!-- TAB 2: LOG DE EVENTOS -->
+        <div id="tab-log-eventos" class="tab-content">
+            <div class="card col-span-12">
+                <div class="card-header">
+                    <div class="card-title-group">
+                        <div class="card-icon" style="color: var(--cyan-neon);">
+                            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="card-title">Registro de Eventos do Sistema</h2>
+                            <p class="card-subtitle">Auditoria e telemetria em tempo real - 2026-09-04</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="log-list">
+                    <div class="log-item">
+                        <div class="log-left">
+                            <span class="log-time">14:30:12</span>
+                            <span class="badge-alert badge-red">CRÍTICO</span>
+                            <span class="log-msg">Umidade excedeu limiar seguro de 85% (Atual: 88%)</span>
+                        </div>
+                        <span class="log-location">Santos / SP</span>
+                    </div>
+
+                    <div class="log-item">
+                        <div class="log-left">
+                            <span class="log-time">14:15:00</span>
+                            <span class="badge-alert badge-blue">SISTEMA</span>
+                            <span class="log-msg">Proteção Anti-congelamento acionada automaticamente (&lt; 8°C)</span>
+                        </div>
+                        <span class="log-location">Curitiba / PR</span>
+                    </div>
+
+                    <div class="log-item">
+                        <div class="log-left">
+                            <span class="log-time">13:42:55</span>
+                            <span class="badge-alert badge-amber">ALERTA</span>
+                            <span class="log-msg">Micro-tremores de 5.2 Mw detectados pela rede geológica</span>
+                        </div>
+                        <span class="log-location">Oaxaca / MX</span>
+                    </div>
+
+                    <div class="log-item">
+                        <div class="log-left">
+                            <span class="log-time">12:00:00</span>
+                            <span class="badge-alert badge-amber">MANUTENÇÃO</span>
+                            <span class="log-msg">Sensor SN-8821-LIT marcado para substituição de urgência</span>
+                        </div>
+                        <span class="log-location">Sistema Preditivo</span>
+                    </div>
+
+                    <div class="log-item">
+                        <div class="log-left">
+                            <span class="log-time">10:11:04</span>
+                            <span class="badge-alert" style="background: rgba(16,185,129,0.15); color: var(--green-ok); border: 1px solid rgba(16,185,129,0.3);">OK</span>
+                            <span class="log-msg">Sincronização de rotina de telemetria de rede concluída</span>
+                        </div>
+                        <span class="log-location">Global Gateway</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer Status Bar -->
+    <footer class="footer">
+        <div>SCADA Pro v4.12.0 &bull; Modbus/IP & OpenPLC Core</div>
+        <div>Latência de Rede: <strong style="color: var(--green-ok);">12 ms</strong> &bull; Carga do Servidor: <strong style="color: var(--cyan-neon);">34%</strong></div>
+    </footer>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast">
+        <svg width="20" height="20" fill="none" stroke="var(--cyan-neon)" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <span>Relatório Consolidado Exportado com Sucesso! (PDF)</span>
+    </div>
+
+    <!-- JavaScript Integrado -->
+    <script>
+        // Data Fixa solicitada + Relógio Ativo
+        const fixedDateStr = "2026-09-04";
+        document.getElementById('current-date').innerText = fixedDateStr;
+
+        function updateTime() {
+            const now = new Date();
+            const hrs = String(now.getHours()).padStart(2, '0');
+            const mins = String(now.getMinutes()).padStart(2, '0');
+            const secs = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('current-time').innerText = `${hrs}:${mins}:${secs} UTC`;
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        // Alternar Abas (Tabs)
+        function switchTab(tabId, btn) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            btn.classList.add('active');
+        }
+
+        // Simular Exportação de Relatório
+        function exportReport() {
+            const toast = document.getElementById('toast');
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3500);
+        }
+
+        // Canvas 1: Sismógrafo Realtime Simulation
+        const seismogram = document.getElementById('seismographCanvas');
+        const ctxSeismo = seismogram.getContext('2d');
+        let animationFrameId;
+        let xOffset = 0;
+
+        function resizeCanvas() {
+            if (seismogram && seismogram.parentElement) {
+                seismogram.width = seismogram.parentElement.clientWidth;
+                seismogram.height = seismogram.parentElement.clientHeight;
+            }
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function drawSeismograph() {
+            if (!seismogram.width) return;
+            
+            const width = seismogram.width;
+            const height = seismogram.height;
+            const centerY = height / 2;
+
+            ctxSeismo.clearRect(0, 0, width, height);
+
+            // Draw Grid Lines
+            ctxSeismo.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctxSeismo.lineWidth = 1;
+            ctxSeismo.beginPath();
+            for(let y = 0; y < height; y += 20) {
+                ctxSeismo.moveTo(0, y);
+                ctxSeismo.lineTo(width, y);
+            }
+            ctxSeismo.stroke();
+
+            // Draw Seismic Line
+            ctxSeismo.strokeStyle = '#f59e0b'; // Amber Color
+            ctxSeismo.lineWidth = 1.8;
+            ctxSeismo.shadowBlur = 8;
+            ctxSeismo.shadowColor = 'rgba(245, 158, 11, 0.5)';
+            ctxSeismo.beginPath();
+
+            xOffset += 0.05;
+
+            for (let x = 0; x < width; x++) {
+                // Generate a waveform simulating tremor pulse
+                const freq1 = Math.sin((x * 0.03) + xOffset);
+                const freq2 = Math.cos((x * 0.08) - xOffset);
+                let spike = 0;
+                
+                // Random seismic peaks simulating 5.2 Mw waveform
+                if ((x + Math.floor(xOffset * 10)) % 180 < 40) {
+                    spike = (Math.sin(x * 0.3) * 28);
+                } else {
+                    spike = (Math.random() - 0.5) * 4;
+                }
+
+                const y = centerY + (freq1 * 6) + (freq2 * 4) + spike;
+
+                if (x === 0) {
+                    ctxSeismo.moveTo(x, y);
+                } else {
+                    ctxSeismo.lineTo(x, y);
+                }
+            }
+            ctxSeismo.stroke();
+
+            animationFrameId = requestAnimationFrame(drawSeismograph);
+        }
+        drawSeismograph();
+
+        // Canvas 2: Circular Humidity Gauge (88%)
+        const gaugeCanvas = document.getElementById('humidityGaugeCanvas');
+        if (gaugeCanvas) {
+            const ctxGauge = gaugeCanvas.getContext('2d');
+            const cX = gaugeCanvas.width / 2;
+            const cY = gaugeCanvas.height / 2;
+            const radius = 46;
+            const percentage = 0.88; // 88%
+
+            // Background Track
+            ctxGauge.beginPath();
+            ctxGauge.arc(cX, cY, radius, 0, 2 * Math.PI);
+            ctxGauge.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+            ctxGauge.lineWidth = 8;
+            ctxGauge.stroke();
+
+            // Active Arc
+            const startAngle = -0.5 * Math.PI;
+            const endAngle = startAngle + (percentage * 2 * Math.PI);
+
+            ctxGauge.beginPath();
+            ctxGauge.arc(cX, cY, radius, startAngle, endAngle);
+            ctxGauge.strokeStyle = '#ef4444'; // Red Alert
+            ctxGauge.lineWidth = 8;
+            ctxGauge.lineCap = 'round';
+            ctxGauge.shadowBlur = 10;
+            ctxGauge.shadowColor = 'rgba(239, 68, 68, 0.6)';
+            ctxGauge.stroke();
+        }
+    </script>
+</body>
+</html>

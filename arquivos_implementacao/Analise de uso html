@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Análise de Uso Diário do Equipamento</title>
+  <!-- Chart.js para geração do gráfico -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <header>
+    <div>
+      <h1>ANÁLISE DE USO DIÁRIO DO EQUIPAMENTO</h1>
+      <p>Plataforma de Monitoramento de Horas/Ciclos & Predição de Manutenção</p>
+    </div>
+
+    <!-- Status, Data e Hora -->
+    <div>
+      <div>SISTEMA OPERACIONAL</div>
+      <div id="liveDateTime">--/--/---- - --:--:--</div>
+    </div>
+  </header>
+
+  <!-- Módulo Operacional (+1 hora de uso por clique) -->
+  <section>
+    <h2>Módulo de Registro Operacional (+1 Hora por Clique)</h2>
+    <div>
+      <input type="text" id="equipamentoInput" placeholder="Nome ou ID do equipamento (ex: Gerador 01)">
+      <button onclick="registrarUsoManualmente()">+1 Hora de Uso</button>
+
+      <div>
+        <button onclick="registrarAtalho('Gerador 01')">+1h Gerador 01</button>
+        <button onclick="registrarAtalho('Chiller 02')">+1h Chiller 02</button>
+        <button onclick="registrarAtalho('Compressor A')">+1h Compressor A</button>
+        <button onclick="registrarAtalho('Bomba Hidráulica')">+1h Bomba Hidráulica</button>
+        <button onclick="registrarAtalho('Elevador Carga')">+1h Elevador Carga</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Cards de KPI -->
+  <section>
+    <div>
+      <h3>Maior Uso Diário Atual</h3>
+      <div id="kpiEquipamentoLider">-</div>
+      <div id="kpiTotalLider">0 horas acumuladas</div>
+    </div>
+
+    <div>
+      <h3>Total de Horas Consolidado</h3>
+      <div id="kpiTotalGeral">0 h</div>
+      <div>Base diária integrada</div>
+    </div>
+
+    <div>
+      <h3>Projeção de Sobrecarga / Risco</h3>
+      <div id="kpiProjecaoManutencao">-</div>
+      <div id="kpiStatusTrend">Calculando tendência...</div>
+    </div>
+
+    <div>
+      <h3>Índice de Saúde da Frota</h3>
+      <div id="kpiSaudeFrota">98.2%</div>
+      <div>Operação dentro das metas</div>
+    </div>
+  </section>
+
+  <!-- Grid Principal (Tabela + Gráfico) -->
+  <main>
+    <!-- Tabela de Ranking -->
+    <section>
+      <h2>Ranking de Equipamentos por Uso Diário</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Posição / Equipamento</th>
+            <th>Uso Atual</th>
+            <th>Participação (%)</th>
+            <th>Projeção Próx. Período</th>
+            <th>Status de Risco</th>
+          </tr>
+        </thead>
+        <tbody id="tabelaCorpo"></tbody>
+      </table>
+    </section>
+
+    <!-- Gráfico Comparativo Chart.js -->
+    <section>
+      <h2>Uso Atual vs. Projeção Preditiva</h2>
+      <div>
+        <canvas id="graficoUsoEquipamentos"></canvas>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // Série temporal de uso diário em horas [Dia 1, Dia 2, Dia 3, Hoje]
+    const historicoEquipamentos = {
+      "Gerador 01": [4, 6, 8, 10],
+      "Chiller 02": [12, 11, 9, 8],
+      "Compressor A": [8, 12, 18, 24],
+      "Bomba Hidráulica": [2, 3, 2, 4],
+      "Elevador Carga": [10, 12, 14, 16]
+    };
+
+    let graficoChartJS = null;
+
+    // Relógio em tempo real
+    function atualizarDataHora() {
+      const agora = new Date();
+      const dia = String(agora.getDate()).padStart(2, '0');
+      const mes = String(agora.getMonth() + 1).padStart(2, '0');
+      const ano = agora.getFullYear();
+      const horas = String(agora.getHours()).padStart(2, '0');
+      const minutos = String(agora.getMinutes()).padStart(2, '0');
+      const segundos = String(agora.getSeconds()).padStart(2, '0');
+
+      document.getElementById('liveDateTime').innerText = `${dia}/${mes}/${ano} - ${horas}:${minutos}:${segundos}`;
+    }
+    setInterval(atualizarDataHora, 1000);
+    atualizarDataHora();
+
+    // Regressão Linear Preditiva para projeção de uso futuro
+    function calcularPredicao(serie) {
+      const n = serie.length;
+      if (n < 2) return { previsao: serie[0] || 0, inclinacao: 0 };
+
+      const x = Array.from({ length: n }, (_, i) => i + 1);
+      const y = serie;
+
+      const sumX = x.reduce((a, b) => a + b, 0);
+      const sumY = y.reduce((a, b) => a + b, 0);
+      const sumXY = x.reduce((a, b, i) => a + (b * y[i]), 0);
+      const sumXX = x.reduce((a, b) => a + (b * b), 0);
+
+      const inclinacao = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+      const intercepto = (sumY - inclinacao * sumX) / n;
+
+      const proximoPeriodo = n + 1;
+      const previsao = Math.max(0, Math.round(inclinacao * proximoPeriodo + intercepto));
+
+      return { previsao, inclinacao };
+    }
+
+    function processarDashboard() {
+      const listaEquipamentos = Object.keys(historicoEquipamentos);
+      let totalGeral = 0;
+      let equipamentoLider = null;
+      let maxHoras = -1;
+
+      let equipamentoMaiorRisco = null;
+      let maiorPrevisaoPreditiva = -1;
+      let maiorInclinacao = 0;
+
+      const relatorio = [];
+
+      listaEquipamentos.forEach(nomeEq => {
+        const historico = historicoEquipamentos[nomeEq];
+        const atual = historico[historico.length - 1];
+        totalGeral += atual;
+
+        if (atual > maxHoras) {
+          maxHoras = atual;
+          equipamentoLider = nomeEq;
+        }
+
+        const predicao = calcularPredicao(historico);
+
+        if (predicao.previsao > maiorPrevisaoPreditiva) {
+          maiorPrevisaoPreditiva = predicao.previsao;
+          equipamentoMaiorRisco = nomeEq;
+          maiorInclinacao = predicao.inclinacao;
+        }
+
+        relatorio.push({
+          equipamento: nomeEq,
+          atual,
+          previsao: predicao.previsao,
+          inclinacao: predicao.inclinacao
+        });
+      });
+
+      relatorio.sort((a, b) => b.atual - a.atual);
+
+      // Atualização dos KPIs
+      document.getElementById('kpiTotalGeral').innerText = `${totalGeral} h`;
+      document.getElementById('kpiEquipamentoLider').innerText = equipamentoLider;
+      document.getElementById('kpiTotalLider').innerText = `${maxHoras}h acumuladas (${((maxHoras / totalGeral) * 100).toFixed(1)}%)`;
+
+      document.getElementById('kpiProjecaoManutencao').innerText = equipamentoMaiorRisco;
+      document.getElementById('kpiStatusTrend').innerText = `Est. ${maiorPrevisaoPreditiva}h (${maiorInclinacao > 1.5 ? 'Tendência de Sobrecarga' : 'Uso Estável'})`;
+
+      // Atualização da Tabela
+      const tbody = document.getElementById('tabelaCorpo');
+      tbody.innerHTML = '';
+
+      relatorio.forEach((item, index) => {
+        const perc = totalGeral > 0 ? ((item.atual / totalGeral) * 100).toFixed(1) : 0;
+        
+        let statusText = 'Normal';
+        if (item.inclinacao > 2.0) {
+          statusText = 'Requer Manutenção';
+        } else if (item.inclinacao > 0.8) {
+          statusText = 'Atenção / Elevado';
+        }
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${index + 1}º - ${item.equipamento}</strong></td>
+          <td><strong>${item.atual} h</strong></td>
+          <td>${perc}%</td>
+          <td><strong>${item.previsao} h</strong></td>
+          <td><span>${statusText}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      renderizarGrafico(relatorio);
+    }
+
+    // Gráfico Chart.js
+    function renderizarGrafico(dados) {
+      const labels = dados.map(d => d.equipamento);
+      const dadosAtuais = dados.map(d => d.atual);
+      const dadosProjeção = dados.map(d => d.previsao);
+
+      if (graficoChartJS) {
+        graficoChartJS.destroy();
+      }
+
+      const ctx = document.getElementById('graficoUsoEquipamentos').getContext('2d');
+      graficoChartJS = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Uso Atual (Horas)',
+              data: dadosAtuais
+            },
+            {
+              label: 'Projeção Preditiva (Horas)',
+              data: dadosProjeção
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false
+        }
+      });
+    }
+
+    function registrarUsoManualmente() {
+      const input = document.getElementById('equipamentoInput');
+      const nomeEquipamento = input.value.trim();
+
+      if (!nomeEquipamento) {
+        alert('Por favor, informe o nome ou ID do equipamento.');
+        return;
+      }
+
+      adicionarHoraUso(nomeEquipamento);
+      input.value = '';
+    }
+
+    function registrarAtalho(nomeEquipamento) {
+      adicionarHoraUso(nomeEquipamento);
+    }
+
+    function adicionarHoraUso(nomeEquipamento) {
+      if (!historicoEquipamentos[nomeEquipamento]) {
+        historicoEquipamentos[nomeEquipamento] = [0, 0, 0, 0];
+      }
+
+      const ultimoIndice = historicoEquipamentos[nomeEquipamento].length - 1;
+      historicoEquipamentos[nomeEquipamento][ultimoIndice] += 1;
+
+      processarDashboard();
+    }
+
+    processarDashboard();
+  </script>
+</body>
+</html>

@@ -78,28 +78,28 @@ export const ROLE_ALLOWED_VIEWS: Record<UserRole, ActiveView[]> = {
   PRESIDENTE: [
     'dashboard', 'regional', 'managers', 'maps',
     'history', 'supervisors', 'employees',
-    'intelligence', 'maintenance', 'parts',
+    'intelligence', 'maintenance', 'predictive', 'parts',
     'contracts', 'financial', 'training', 'reports',
     'future_iot', 'import'
   ],
   ADMINISTRADOR: [
     'dashboard', 'regional', 'maps', 'alerts',
     'calls', 'history', 'technicians', 'supervisors', 'managers', 'employees',
-    'intelligence', 'equipments', 'maintenance', 'parts',
+    'intelligence', 'equipments', 'maintenance', 'predictive', 'parts',
     'contracts', 'financial', 'training', 'reports',
     'future_iot', 'import', 'settings'
   ],
   GERENTE: [
     'dashboard', 'maps', 'alerts',
     'supervisors', 'technicians', 'managers', 'employees',
-    'intelligence', 'equipments', 'maintenance', 'parts',
+    'intelligence', 'equipments', 'maintenance', 'predictive', 'parts',
     'contracts', 'financial', 'training', 'reports',
     'future_iot'
   ],
   SUPERVISOR: [
     'dashboard', 'maps', 'alerts',
     'calls', 'history', 'technicians',
-    'intelligence', 'equipments', 'maintenance', 'parts',
+    'intelligence', 'equipments', 'maintenance', 'predictive', 'parts',
     'training', 'reports',
     'future_iot'
   ],

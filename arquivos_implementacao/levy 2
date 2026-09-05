@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OTIS FleetPulse | Gestão Preditiva & Inteligência de Frota</title>
+  <style>
+    :root {
+      --otis-navy: #00205B;
+      --otis-blue: #00A3E0;
+      --otis-blue-hover: #0082b3;
+      --otis-dark-bg: #0A0F1D;
+      --otis-card-bg: #111827;
+      --otis-card-hover: #1E293B;
+      --otis-border: #1E293B;
+      --otis-text-main: #F8FAFC;
+      --otis-text-muted: #94A3B8;
+      
+      --status-urgent: #EF4444;
+      --status-urgent-bg: rgba(239, 68, 68, 0.15);
+      --status-warning: #F59E0B;
+      --status-warning-bg: rgba(245, 158, 11, 0.15);
+      --status-normal: #10B981;
+      --status-normal-bg: rgba(16, 185, 129, 0.15);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--otis-dark-bg);
+      color: var(--otis-text-main);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    /* Header & Navigation */
+    header {
+      background: linear-gradient(180deg, rgba(0, 32, 91, 0.95) 0%, rgba(10, 15, 29, 0.95) 100%);
+      border-bottom: 1px solid var(--otis-border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+
+    .header-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .logo-otis {
+      background: var(--otis-navy);
+      color: #FFF;
+      font-weight: 900;
+      font-size: 1.8rem;
+      letter-spacing: 2px;
+      padding: 0.2rem 0.8rem;
+      border-radius: 4px;
+      border: 2px solid var(--otis-blue);
+      box-shadow: 0 0 15px rgba(0, 163, 224, 0.3);
+    }
+
+    .brand-title {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand-title h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: #FFF;
+    }
+
+    .brand-title span {
+      font-size: 0.75rem;
+      color: var(--otis-blue);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-weight: 600;
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 0.5rem;
+      background: rgba(15, 23, 42, 0.6);
+      padding: 0.3rem;
+      border-radius: 8px;
+      border: 1px solid var(--otis-border);
+    }
+
+    .nav-btn {
+      background: transparent;
+      border: none;
+      color: var(--otis-text-muted);
+      padding: 0.6rem 1.2rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .nav-btn:hover {
+      color: #FFF;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .nav-btn.active {
+      background: var(--otis-blue);
+      color: #FFF;
+      box-shadow: 0 2px 10px rgba(0, 163, 224, 0.4);
+    }
+
+    /* KPI Summary Bar */
+    .kpi-bar {
+      max-width: 1400px;
+      margin: 1.5rem auto;
+      padding: 0 1.5rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+    }
+
+    .kpi-card {
+      background: var(--otis-card-bg);
+      border: 1px solid var(--otis-border);
+      border-radius: 10px;
+      padding: 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: transform 0.2s;
+    }
+
+    .kpi-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(0, 163, 224, 0.4);
+    }
+
+    .kpi-info p {
+      font-size: 0.8rem;
+      color: var(--otis-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .kpi-info h3 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-top: 0.2rem;
+    }
+
+    .kpi-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 163, 224, 0.1);
+      color: var(--otis-blue);
+    }
+
+    /* Main Container */
+    main {
+      max-width: 1400px;
+      margin: 0 auto 3rem auto;
+      padding: 0 1.5rem;
+    }
+
+    .module-section {
+      display: none;
+      animation: fadeIn 0.3s ease-in-out forwards;
+    }
+
+    .module-section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Card Styling */
+    .panel {
+      background: var(--otis-card-bg);
+      border: 1px solid var(--otis-border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.2rem;
+      padding-bottom: 0.8rem;
+      border-bottom: 1px solid var(--otis-border);
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .panel-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #FFF;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .panel-title::before {
+      content: '';
+      display: inline-block;
+      width: 4px;
+      height: 18px;
+      background: var(--otis-blue);
+      border-radius: 2px;
+    }
+
+    /* Controls & Inputs */
+    .controls-row {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .search-input, .select-input, .number-input {
+      background: #0F172A;
+      border: 1px solid var(--otis-border);
+      color: #FFF;
+      padding: 0.6rem 1rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-input:focus, .select-input:focus, .number-input:focus {
+      border-color: var(--otis-blue);
+    }
+
+    .filter-btn-group {
+      display: flex;
+      gap: 0.3rem;
+      background: #0F172A;
+      padding: 0.2rem;
+      border-radius: 6px;
+      border: 1px solid var(--otis-border);
+    }
+
+    .filter-btn {
+      background: transparent;
+      border: none;
+      color: var(--otis-text-muted);
+      padding: 0.4rem 0.8rem;
+      font-size: 0.8rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .filter-btn.active {
+      background: var(--otis-navy);
+      color: var(--otis-blue);
+      border: 1px solid var(--otis-blue);
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.6rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .badge-urgent {
+      background: var(--status-urgent-bg);
+      color: var(--status-urgent);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .badge-warning {
+      background: var(--status-warning-bg);
+      color: var(--status-warning);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .badge-normal {
+      background: var(--status-normal-bg);
+      color: var(--status-normal);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    /* Tables */
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .otis-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.875rem;
+    }
+
+    .otis-table th {
+      background: rgba(15, 23, 42, 0.8);
+      color: var(--otis-text-muted);
+      padding: 0.85rem 1rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--otis-border);
+    }
+
+    .otis-table td {
+      padding: 1rem;
+      border-bottom: 1px solid var(--otis-border);
+      color: var(--otis-text-main);
+    }
+
+    .otis-table tbody tr {
+      transition: background 0.15s;
+    }
+
+    .otis-table tbody tr:hover {
+      background: rgba(30, 41, 59, 0.5);
+    }
+
+    /* Progress & Risk Meters */
+    .risk-meter {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .progress-bar-bg {
+      flex: 1;
+      height: 8px;
+      background: #1E293B;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.4s ease;
+    }
+
+    /* Buttons */
+    .btn-action {
+      background: rgba(0, 163, 224, 0.15);
+      color: var(--otis-blue);
+      border: 1px solid var(--otis-blue);
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-action:hover {
+      background: var(--otis-blue);
+      color: #FFF;
+      box-shadow: 0 0 10px rgba(0, 163, 224, 0.4);
+    }
+
+    .btn-primary {
+      background: var(--otis-blue);
+      color: #FFF;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-primary:hover {
+      background: var(--otis-blue-hover);
+    }
+
+    /* Grid layout for Module 1 Simulator */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 1024px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+
+    .calc-card {
+      background: #0F172A;
+      border: 1px solid var(--otis-border);
+      border-radius: 10px;
+      padding: 1.2rem;
+    }
+
+    .calc-group {
+      margin-bottom: 1rem;
+    }
+
+    .calc-group label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--otis-text-muted);
+      margin-bottom: 0.4rem;
+    }
+
+    .calc-result {
+      background: rgba(0, 163, 224, 0.08);
+      border: 1px dashed var(--otis-blue);
+      border-radius: 8px;
+      padding: 1rem;
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    .calc-result-val {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--otis-blue);
+    }
+
+    /* Module 2: Cross-City Lifespan CSS Visuals */
+    .city-comparison-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.2rem;
+      margin-top: 1.5rem;
+    }
+
+    .city-card {
+      background: #0F172A;
+      border: 1px solid var(--otis-border);
+      border-radius: 10px;
+      padding: 1.2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .city-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+    }
+
+    .city-card.sp::before { background: #3B82F6; }
+    .city-card.santos::before { background: #EF4444; }
+    .city-card.cdmx::before { background: #F59E0B; }
+    .city-card.poa::before { background: #10B981; }
+
+    .city-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.8rem;
+    }
+
+    .city-name {
+      font-weight: 700;
+      font-size: 1.05rem;
+    }
+
+    .city-tag {
+      font-size: 0.75rem;
+      color: var(--otis-text-muted);
+      background: rgba(255,255,255,0.05);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+    }
+
+    .city-stat {
+      margin-top: 1rem;
+    }
+
+    .city-stat-val {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #FFF;
+    }
+
+    .city-factor-list {
+      margin-top: 0.8rem;
+      font-size: 0.8rem;
+      color: var(--otis-text-muted);
+    }
+
+    .city-factor-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.4rem;
+      margin-bottom: 0.3rem;
+    }
+
+    /* Visual Bar Chart in CSS */
+    .bar-chart-container {
+      margin-top: 1.5rem;
+      background: #0F172A;
+      padding: 1.5rem;
+      border-radius: 10px;
+      border: 1px solid var(--otis-border);
+    }
+
+    .chart-row {
+      margin-bottom: 1.2rem;
+    }
+
+    .chart-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .chart-label-group {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .chart-bar-outer {
+      height: 22px;
+      background: #1E293B;
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .chart-bar-inner {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #FFF;
+    }
+
+    /* Module 3: Procurement Aggregator */
+    .procurement-summary {
+      background: linear-gradient(135deg, rgba(0, 32, 91, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%);
+      border: 1px solid var(--otis-blue);
+      border-radius: 12px;
+      padding: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .summary-metrics {
+      display: flex;
+      gap: 2.5rem;
+      flex-wrap: wrap;
+    }
+
+    .metric-item span {
+      font-size: 0.8rem;
+      color: var(--otis-text-muted);
+      text-transform: uppercase;
+      display: block;
+    }
+
+    .metric-item strong {
+      font-size: 1.5rem;
+      color: #FFF;
+    }
+
+    .metric-item.savings strong {
+      color: #10B981;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: var(--otis-blue);
+      color: #FFF;
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      transform: translateY(150%);
+      transition: transform 0.3s ease;
+      z-index: 1000;
+      font-weight: 600;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .header-container { flex-direction: column; gap: 1rem; align-items: stretch; }
+      .nav-tabs { width: 100%; overflow-x: auto; }
+      .procurement-summary { flex-direction: column; align-items: stretch; }
+      .summary-metrics { justify-content: space-between; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="header-container">
+      <div class="brand">
+        <div class="logo-otis">OTIS</div>
+        <div class="brand-title">
+          <h1>FleetPulse Intelligence</h1>
+          <span>Sistema Integrado de Gestão & Manutenção Preditiva</span>
+        </div>
+      </div>
+      <nav class="nav-tabs">
+        <button class="nav-btn active" onclick="switchTab('predictive')">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/><path d="M8 3.5a.5.5 0 0 0-.5.5v4a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8.5 7.71V4a.5.5 0 0 0-.5-.5z"/></svg>
+          1. Manutenção Preditiva
+        </button>
+        <button class="nav-btn" onclick="switchTab('crosscity')">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zM1 8a7 7 0 0 1 5.34-6.802A6.023 6.023 0 0 0 5 4.5c0 1.657 1.343 3 3 3a5.98 5.98 0 0 0 3.34-1.01 7.004 7.004 0 0 1 3.642 6.81A7.002 7.002 0 0 1 1 8z"/></svg>
+          2. Análise Cidades
+        </button>
+        <button class="nav-btn" onclick="switchTab('procurement')">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M0 2.5A.5.5 0 0 1 .5 2h2a.5.5 0 0 1 .485.379L3.89 4H14.5a.5.5 0 0 1 .485.621l-1.5 6A.5.5 0 0 1 13 11H4a.5.5 0 0 1-.485-.379L1.61 3H.5a.5.5 0 0 1-.5-.5zM3.14 5l1.25 5h8.22l1.25-5H3.14zM5 13a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm7 0a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/></svg>
+          3. Agrupador Compras
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Global KPI Bar -->
+  <section class="kpi-bar">
+    <div class="kpi-card">
+      <div class="kpi-info">
+        <p>Frota Ativa</p>
+        <h3>1,420 Equip.</h3>
+      </div>
+      <div class="kpi-icon">
+        <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M2 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H2zm0 1h12v12H2V2z"/><path d="M4 4h3v8H4V4zm5 0h3v8H9V4z"/></svg>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-info">
+        <p>Trocas Críticas (7d)</p>
+        <h3 style="color: var(--status-urgent);">14 Unidades</h3>
+      </div>
+      <div class="kpi-icon" style="background: rgba(239, 68, 68, 0.1); color: var(--status-urgent);">
+        <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.146.146 0 0 1 .054.057l6.857 11.667c.036.06.035.124.002.183a.163.163 0 0 1-.054.06.116.116 0 0 1-.066.017H1.146a.115.115 0 0 1-.066-.017.163.163 0 0 1-.054-.06.176.176 0 0 1 .002-.183L7.884 2.073a.147.147 0 0 1 .054-.057zm0-1.252a1.38 1.38 0 0 0-1.18.665L.073 13.096c-.4.679.09 1.54.87 1.54h14.113c.78 0 1.27-.861.87-1.54L9.118 1.429a1.38 1.38 0 0 0-1.18-.665z"/><path d="M7.002 12a1 1 0 1 0 2 0 1 1 0 0 0-2 0zM7.1 5.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995z"/></svg>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-info">
+        <p>Economia em Lote Est.</p>
+        <h3 style="color: #10B981;">R$ 142.800</h3>
+      </div>
+      <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.1); color: #10B981;">
+        <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M16 6a2 2 0 0 0-2-2H2a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6zm-1.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h13z"/></svg>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-info">
+        <p>Saúde Global Frota</p>
+        <h3 style="color: var(--otis-blue);">94.2%</h3>
+      </div>
+      <div class="kpi-icon">
+        <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0zm3.97 4.97a.75.75 0 0 0-1.07.02L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L7.002 11.5a.75.75 0 0 0 1.079-.02l4-4.5a.75.75 0 0 0-.11-1.01z"/></svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content Area -->
+  <main>
+
+    <!-- MODULE 1: PREVISÃO DA PRÓXIMA TROCA -->
+    <section id="module-predictive" class="module-section active">
+      <div class="grid-2">
+        
+        <!-- Table & List -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Previsão Preditiva de Troca de Peças Críticas</div>
+            <div class="controls-row">
+              <input type="text" id="predictive-search" class="search-input" placeholder="Buscar por ID, Edifício ou Peça..." oninput="filterPredictiveTable()">
+              <div class="filter-btn-group">
+                <button class="filter-btn active" onclick="setPredictiveFilter('ALL', this)">Todos</button>
+                <button class="filter-btn" onclick="setPredictiveFilter('URGENTE', this)">Urgente</button>
+                <button class="filter-btn" onclick="setPredictiveFilter('ATENCAO', this)">Atenção</button>
+                <button class="filter-btn" onclick="setPredictiveFilter('NORMAL', this)">Normal</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="otis-table">
+              <thead>
+                <tr>
+                  <th>Equipamento / Cliente</th>
+                  <th>Peça Crítica</th>
+                  <th>Horas Uso</th>
+                  <th>Risco de Wear</th>
+                  <th>Data Est. Troca</th>
+                  <th>Status</th>
+                  <th>Ação</th>
+                </tr>
+              </thead>
+              <tbody id="predictive-tbody">
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Interactive Lifespan Simulator -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Simulador de Ciclo de Vida Residual</div>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--otis-text-muted); margin-bottom: 1.2rem;">
+            Calcule dinamicamente a estimativa de vida útil restante baseada nas horas de operação diárias e nos fatores de estresse ambiental.
+          </p>
+
+          <div class="calc-card">
+            <div class="calc-group">
+              <label for="calc-component">Componente Avaliado</label>
+              <select id="calc-component" class="select-input" style="width: 100%;" onchange="runCalculator()">
+                <option value="20000">Cabo de Tração Coated Gen2 (Ref: 20,000h)</option>
+                <option value="15000">Inversor VVVF Regen Drive (Ref: 15,000h)</option>
+                <option value="12000">Patim de Freio Cerâmico (Ref: 12,000h)</option>
+                <option value="30000">Sensor Sísmico Triaxial (Ref: 30,000h)</option>
+              </select>
+            </div>
+
+            <div class="calc-group">
+              <label for="calc-current-hours">Horas Atuais de Uso (h)</label>
+              <input type="number" id="calc-current-hours" class="number-input" value="14200" style="width: 100%;" oninput="runCalculator()">
+            </div>
+
+            <div class="calc-group">
+              <label for="calc-daily-use">Uso Diário Médio (horas/dia)</label>
+              <input type="number" id="calc-daily-use" class="number-input" value="16" min="1" max="24" style="width: 100%;" oninput="runCalculator()">
+            </div>
+
+            <div class="calc-group">
+              <label for="calc-env-factor">Fator de Severidade Ambiental</label>
+              <select id="calc-env-factor" class="select-input" style="width: 100%;" onchange="runCalculator()">
+                <option value="1.0">Normal (Clima controlado / Baixo tráfego)</option>
+                <option value="1.25">Severo (São Paulo - Tráfego Intenso)</option>
+                <option value="1.35">Extremo (Santos - Maresia / Umidade)</option>
+                <option value="1.25">Sísmico (CDMX - Micro-vibrações constantes)</option>
+              </select>
+            </div>
+
+            <div class="calc-result">
+              <span style="font-size: 0.8rem; color: var(--otis-text-muted); text-transform: uppercase;">Previsão Residual Estima</span>
+              <div id="calc-result-days" class="calc-result-val">0 dias</div>
+              <small id="calc-result-date" style="color: var(--otis-blue); font-size: 0.85rem; font-weight: 600; display: block; margin-top: 0.2rem;">--/--/----</small>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- MODULE 2: COMPARAÇÃO DE VIDA ÚTIL ENTRE CIDADES -->
+    <section id="module-crosscity" class="module-section">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Análise Comparativa Regional de Durabilidade (Cross-City Lifespan Analysis)</div>
+          <div class="controls-row">
+            <label style="font-size: 0.85rem; color: var(--otis-text-muted);">Selecionar Peça Crítica:</label>
+            <select id="city-part-selector" class="select-input" onchange="updateCityAnalysis()">
+              <option value="cabo">Cabo de Aço Revestido / Tração</option>
+              <option value="vvvf">Inversor Frequência VVVF</option>
+              <option value="freio">Patim de Freio & Sistema Guia</option>
+              <option value="sensor">Sensor Sísmico & Acelerômetro</option>
+            </select>
+          </div>
+        </div>
+
+        <p style="font-size: 0.9rem; color: var(--otis-text-muted); margin-bottom: 1.5rem;">
+          Demonstração do impacto direto dos microclimáticos e padrões urbanos na expectativa de vida útil das peças da frota OTIS em diferentes metrópoles.
+        </p>
+
+        <!-- Dynamic CSS Bar Chart -->
+        <div class="bar-chart-container">
+          <h4 style="margin-bottom: 1rem; color: #FFF; font-size: 0.95rem;">Comparativo de Horas Úteis Estimadas por Ecossistema</h4>
+          <div id="chart-bars-wrapper">
+            <!-- Injected via JS -->
+          </div>
+        </div>
+
+        <!-- City Detail Cards -->
+        <div class="city-comparison-grid" id="city-cards-wrapper">
+          <!-- Injected via JS -->
+        </div>
+
+      </div>
+    </section>
+
+    <!-- MODULE 3: AGRUPAMENTO DE COMPRA POR PEÇA -->
+    <section id="module-procurement" class="module-section">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Central de Compras Agrupadas (Procurement Fleet Aggregator)</div>
+          <button class="btn-primary" onclick="triggerGlobalPO()">
+            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 6px;"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
+            Emitir Todas as Ordens Agrupadas
+          </button>
+        </div>
+
+        <div class="procurement-summary">
+          <div class="summary-metrics">
+            <div class="metric-item">
+              <span>Peças Solicitadas Total</span>
+              <strong id="summary-items-count">548 unidades</strong>
+            </div>
+            <div class="metric-item">
+              <span>Custo Sem Agrupamento</span>
+              <strong id="summary-gross-cost">R$ 890.000</strong>
+            </div>
+            <div class="metric-item savings">
+              <span>Economia Estimada (Volume)</span>
+              <strong id="summary-savings">R$ 142.800 (16%)</strong>
+            </div>
+            <div class="metric-item">
+              <span>Valor Total com Desconto</span>
+              <strong id="summary-net-cost" style="color: var(--otis-blue);">R$ 747.200</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="otis-table">
+            <thead>
+              <tr>
+                <th>Código Peça</th>
+                <th>Componente</th>
+                <th>Qtd Global Requerida</th>
+                <th>Cidades Solicitantes</th>
+                <th>Fornecedor Homologado</th>
+                <th>Desconto Lote (%)</th>
+                <th>Economia Gerada</th>
+                <th>Ação</th>
+              </tr>
+            </thead>
+            <tbody id="procurement-tbody">
+              <!-- Injected via JS -->
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="toast">
+    <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L7.002 11.5a.75.75 0 0 0 1.079-.02l4-4.5a.75.75 0 0 0-.02-1.06z"/></svg>
+    <span id="toast-msg">Ordem de compra gerada com sucesso!</span>
+  </div>
+
+  <script>
+    // DATA STORES
+    const predictiveData = [
+      { id: "EQ-9042", client: "Ed. Paulista Corporate (SP)", part: "Cabo de Tração Coated", hours: 18450, risk: 89, daysLeft: 5, status: "URGENTE", action: "Trocar Cabo Immediately" },
+      { id: "EQ-7721", client: "Shopping Praiamar (Santos)", part: "Patim de Freio Cerâmico", hours: 14100, risk: 94, daysLeft: 3, status: "URGENTE", action: "Substituição Imediata" },
+      { id: "EQ-4033", client: "Porto de Santos Terminal 2 (Santos)", part: "Operador de Porta Sellcom", hours: 16500, risk: 82, daysLeft: 8, status: "URGENTE", action: "Substituir Roldanas/Correia" },
+      { id: "EQ-8812", client: "Torres de México Tower A (CDMX)", part: "Sensor Sísmico Triaxial", hours: 12300, risk: 76, daysLeft: 14, status: "ATENCAO", action: "Calibrar / Substituir" },
+      { id: "EQ-5114", client: "Ed. Faria Lima Plaza (SP)", part: "Inversor VVVF Regen Drive", hours: 9800, risk: 68, daysLeft: 18, status: "ATENCAO", action: "Ajustar Tensão & Capacitores" },
+      { id: "EQ-3301", client: "Empresarial Barra (RJ)", part: "Patim de Freio Cerâmico", hours: 11200, risk: 62, daysLeft: 22, status: "ATENCAO", action: "Inspeção de Espessura" },
+      { id: "EQ-6090", client: "Hospital Moinhos de Vento (POA)", part: "Inversor VVVF Regen Drive", hours: 22000, risk: 42, daysLeft: 65, status: "NORMAL", action: "Inspeção Rotineira" },
+      { id: "EQ-1092", client: "Centro Empresarial Capital (SP)", part: "Cabo de Tração Coated", hours: 7400, risk: 25, daysLeft: 120, status: "NORMAL", action: "Monitoramento Preventivo" }
+    ];
+
+    const crossCityData = {
+      cabo: {
+        name: "Cabo de Aço Revestido / Tração",
+        nominalLife: 20000,
+        cities: [
+          { name: "São Paulo (SP)", factor: -10, hours: 18000, color: "#3B82F6", class: "sp", reason: "Alto volume contínuo de ciclos diários (24/7 em torres corporativas)." },
+          { name: "Santos / Litoral (BR)", factor: -35, hours: 13000, color: "#EF4444", class: "santos", reason: "Aceleração de corrosão por maresia e oxidação acelerada das tramas metálicas." },
+          { name: "Cidade do México (MX)", factor: -25, hours: 15000, color: "#F59E0B", class: "cdmx", reason: "Vibrações de micro-seismos e ar rarefeito de alta altitude afetando a lubrificação." },
+          { name: "Porto Alegre (POA)", factor: -15, hours: 17000, color: "#10B981", class: "poa", reason: "Amplitude térmica sazonal com estresse por expansão/contração mecânica." }
+        ]
+      },
+      vvvf: {
+        name: "Inversor de Frequência VVVF Regen Drive",
+        nominalLife: 15000,
+        cities: [
+          { name: "São Paulo (SP)", factor: -5, hours: 14250, color: "#3B82F6", class: "sp", reason: "Rede elétrica estável, estresse focado em picos de demanda nos horários de pico." },
+          { name: "Santos / Litoral (BR)", factor: -30, hours: 10500, color: "#EF4444", class: "santos", reason: "Deposição de névoa salina nas placas eletrônicas provocando curto-circuito/oxidação." },
+          { name: "Cidade do México (MX)", factor: -20, hours: 12000, color: "#F59E0B", class: "cdmx", reason: "Menor densidade do ar em alta altitude reduz a dissipação de calor dos dissipadores." },
+          { name: "Porto Alegre (POA)", factor: -10, hours: 13500, color: "#10B981", class: "poa", reason: "Variação de umidade relativa do ar em invernos rigorosos gerando condensação." }
+        ]
+      },
+      freio: {
+        name: "Patim de Freio Cerâmico",
+        nominalLife: 12000,
+        cities: [
+          { name: "São Paulo (SP)", factor: -25, hours: 9000, color: "#3B82F6", class: "sp", reason: "Frequência elevadíssima de paradas por minuto em edifícios de 40+ andares." },
+          { name: "Santos / Litoral (BR)", factor: -20, hours: 9600, color: "#EF4444", class: "santos", reason: "Partículas de umidade salina cristalizadas aumentando o atrito abrasivo." },
+          { name: "Cidade do México (MX)", factor: -15, hours: 10200, color: "#F59E0B", class: "cdmx", reason: "Micromovimentos de acomodação de solo gerando pequenos desalinhamentos." },
+          { name: "Porto Alegre (POA)", factor: -5, hours: 11400, color: "#10B981", class: "poa", reason: "Operação padrão sem agentes abrasivos externos predominantes." }
+        ]
+      },
+      sensor: {
+        name: "Sensor Sísmico & Acelerômetro Triaxial",
+        nominalLife: 30000,
+        cities: [
+          { name: "São Paulo (SP)", factor: 0, hours: 30000, color: "#3B82F6", class: "sp", reason: "Zona tectônica estável. Apenas vibrações estruturais urbanas padrão." },
+          { name: "Santos / Litoral (BR)", factor: -15, hours: 25500, color: "#EF4444", class: "santos", reason: "Corrosão nos contatos e conectores banhados do sensor." },
+          { name: "Cidade do México (MX)", factor: -40, hours: 18000, color: "#F59E0B", class: "cdmx", reason: "Constante ativação e micro-estresse por tremores diários de baixa magnitude." },
+          { name: "Porto Alegre (POA)", factor: -5, hours: 28500, color: "#10B981", class: "poa", reason: "Sem atividade sísmica, estresse puramente térmico estático." }
+        ]
+      }
+    };
+
+    const procurementData = [
+      { code: "PE-CT-4092", part: "Cabo de Aço Revestido 10mm", qty: 320, unit: "metros", cities: ["Santos (120m)", "São Paulo (150m)", "CDMX (50m)"], supplier: "OTIS Global Supply (USA)", discount: 18, unitPrice: 150 },
+      { code: "PE-VV-8821", part: "Inversor VVVF Regen Drive 15kW", qty: 18, unit: "unidades", cities: ["CDMX (8)", "Porto Alegre (6)", "São Paulo (4)"], supplier: "OTIS Power Sys (GER)", discount: 22, unitPrice: 8500 },
+      { code: "PE-PF-1102", part: "Jogo de Patins de Freio Cerâmico", qty: 85, unit: "conjuntos", cities: ["Santos (35)", "São Paulo (30)", "Porto Alegre (20)"], supplier: "OTIS Brake Tech (FRA)", discount: 15, unitPrice: 1200 },
+      { code: "PE-SS-9901", part: "Sensor Sísmico Triaxial Digital", qty: 25, unit: "unidades", cities: ["CDMX (20)", "São Paulo (5)"], supplier: "OTIS Sensor Systems (JPN)", discount: 25, unitPrice: 3400 }
+    ];
+
+    let currentPredictiveFilter = 'ALL';
+
+    // INITIALIZATION
+    document.addEventListener("DOMContentLoaded", () => {
+      renderPredictiveTable();
+      runCalculator();
+      updateCityAnalysis();
+      renderProcurementTable();
+    });
+
+    // NAVIGATION SYSTEM
+    function switchTab(tabId) {
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.module-section').forEach(sec => sec.classList.remove('active'));
+
+      event.currentTarget.classList.add('active');
+      document.getElementById(`module-${tabId}`).classList.add('active');
+    }
+
+    // MODULE 1 FUNCTIONS
+    function setPredictiveFilter(filter, btn) {
+      currentPredictiveFilter = filter;
+      document.querySelectorAll('.filter-btn-group .filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderPredictiveTable();
+    }
+
+    function filterPredictiveTable() {
+      renderPredictiveTable();
+    }
+
+    function renderPredictiveTable() {
+      const tbody = document.getElementById('predictive-tbody');
+      const searchQuery = document.getElementById('predictive-search').value.toLowerCase();
+
+      const filtered = predictiveData.filter(item => {
+        const matchesFilter = currentPredictiveFilter === 'ALL' || item.status === currentPredictiveFilter;
+        const matchesSearch = item.id.toLowerCase().includes(searchQuery) || 
+                              item.client.toLowerCase().includes(searchQuery) || 
+                              item.part.toLowerCase().includes(searchQuery);
+        return matchesFilter && matchesSearch;
+      });
+
+      tbody.innerHTML = filtered.map(item => {
+        let badgeClass = "badge-normal";
+        let barColor = "#10B981";
+        if (item.status === "URGENTE") { badgeClass = "badge-urgent"; barColor = "#EF4444"; }
+        else if (item.status === "ATENCAO") { badgeClass = "badge-warning"; barColor = "#F59E0B"; }
+
+        // Calc est date
+        const estDate = new Date();
+        estDate.setDate(estDate.getDate() + item.daysLeft);
+        const dateStr = estDate.toLocaleDateString('pt-BR');
+
+        return `
+          <tr>
+            <td>
+              <strong style="color: #FFF;">${item.id}</strong>
+              <div style="font-size: 0.78rem; color: var(--otis-text-muted);">${item.client}</div>
+            </td>
+            <td>${item.part}</td>
+            <td><strong>${item.hours.toLocaleString()} h</strong></td>
+            <td>
+              <div class="risk-meter">
+                <div class="progress-bar-bg">
+                  <div class="progress-bar-fill" style="width: ${item.risk}%; background: ${barColor};"></div>
+                </div>
+                <span style="font-size: 0.8rem; font-weight: 700; width: 35px;">${item.risk}%</span>
+              </div>
+            </td>
+            <td>
+              <strong style="color: ${item.daysLeft <= 7 ? 'var(--status-urgent)' : '#FFF'};">${dateStr}</strong>
+              <div style="font-size: 0.75rem; color: var(--otis-text-muted);">em ~${item.daysLeft} dias</div>
+            </td>
+            <td><span class="badge ${badgeClass}">${item.status}</span></td>
+            <td>
+              <button class="btn-action" onclick="orderReplacement('${item.id}', '${item.part}')">Solicitar Troca</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function runCalculator() {
+      const baseLife = parseFloat(document.getElementById('calc-component').value);
+      const currentHours = parseFloat(document.getElementById('calc-current-hours').value) || 0;
+      const dailyUse = parseFloat(document.getElementById('calc-daily-use').value) || 1;
+      const envFactor = parseFloat(document.getElementById('calc-env-factor').value);
+
+      const adjustedTotalLife = baseLife / envFactor;
+      const remainingHours = Math.max(0, adjustedTotalLife - currentHours);
+      const daysLeft = Math.round(remainingHours / dailyUse);
+
+      const targetDate = new Date();
+      targetDate.setDate(targetDate.getDate() + daysLeft);
+
+      document.getElementById('calc-result-days').innerText = `${daysLeft} Dias Úteis`;
+      document.getElementById('calc-result-date').innerText = `Data Limite Est: ${targetDate.toLocaleDateString('pt-BR')} (Restam ${Math.round(remainingHours)} horas)`;
+    }
+
+    function orderReplacement(eqId, partName) {
+      showToast(`Ordem de Serviço criada para ${eqId} (${partName})`);
+    }
+
+    // MODULE 2 FUNCTIONS
+    function updateCityAnalysis() {
+      const selectedKey = document.getElementById('city-part-selector').value;
+      const data = crossCityData[selectedKey];
+
+      // Render Bar Chart
+      const chartWrapper = document.getElementById('chart-bars-wrapper');
+      const maxHours = data.nominalLife;
+
+      chartWrapper.innerHTML = data.cities.map(city => {
+        const percentage = Math.round((city.hours / maxHours) * 100);
+        return `
+          <div class="chart-row">
+            <div class="chart-label-group">
+              <span style="color: #FFF; font-weight: 600;">${city.name}</span>
+              <span style="color: var(--otis-text-muted);">${city.hours.toLocaleString()} horas (${city.factor > 0 ? '+' : ''}${city.factor}%)</span>
+            </div>
+            <div class="chart-bar-outer">
+              <div class="chart-bar-inner" style="width: ${percentage}%; background: ${city.color};">
+                ${percentage}%
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Render City Cards
+      const cardsWrapper = document.getElementById('city-cards-wrapper');
+      cardsWrapper.innerHTML = data.cities.map(city => {
+        return `
+          <div class="city-card ${city.class}">
+            <div class="city-header">
+              <span class="city-name">${city.name}</span>
+              <span class="city-tag">${city.factor}% Durabilidade</span>
+            </div>
+            <div class="city-stat">
+              <span style="font-size: 0.75rem; color: var(--otis-text-muted); text-transform: uppercase;">Vida Útil Média</span>
+              <div class="city-stat-val">${city.hours.toLocaleString()} hrs</div>
+            </div>
+            <div class="city-factor-list">
+              <div class="city-factor-item">
+                <svg width="14" height="14" fill="${city.color}" viewBox="0 0 16 16" style="margin-top: 2px; flex-shrink: 0;"><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l.451-.081.97.032zM8 4.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/></svg>
+                <span>${city.reason}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // MODULE 3 FUNCTIONS
+    function renderProcurementTable() {
+      const tbody = document.getElementById('procurement-tbody');
+      let totalGross = 0;
+      let totalNet = 0;
+      let totalItems = 0;
+
+      tbody.innerHTML = procurementData.map(item => {
+        const itemGross = item.qty * item.unitPrice;
+        const itemNet = itemGross * (1 - item.discount / 100);
+        const itemSavings = itemGross - itemNet;
+
+        totalGross += itemGross;
+        totalNet += itemNet;
+        totalItems += item.qty;
+
+        return `
+          <tr>
+            <td><strong style="color: var(--otis-blue);">${item.code}</strong></td>
+            <td><strong style="color: #FFF;">${item.part}</strong></td>
+            <td><strong>${item.qty} ${item.unit}</strong></td>
+            <td>
+              <div style="font-size: 0.8rem; color: var(--otis-text-muted);">
+                ${item.cities.join(', ')}
+              </div>
+            </td>
+            <td><span style="font-size: 0.85rem;">${item.supplier}</span></td>
+            <td><span class="badge badge-normal">${item.discount}% OFF</span></td>
+            <td><strong style="color: #10B981;">R$ ${itemSavings.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong></td>
+            <td>
+              <button class="btn-action" onclick="generateBatchPO('${item.code}', '${item.part}')">Gerar PO Lote</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      const totalSavings = totalGross - totalNet;
+      const savingsPct = Math.round((totalSavings / totalGross) * 100);
+
+      document.getElementById('summary-items-count').innerText = `${totalItems} unidades`;
+      document.getElementById('summary-gross-cost').innerText = `R$ ${totalGross.toLocaleString('pt-BR')}`;
+      document.getElementById('summary-savings').innerText = `R$ ${totalSavings.toLocaleString('pt-BR')} (${savingsPct}%)`;
+      document.getElementById('summary-net-cost').innerText = `R$ ${totalNet.toLocaleString('pt-BR')}`;
+    }
+
+    function generateBatchPO(code, name) {
+      showToast(`Ordem de Compra Agrupada gerada para ${code} - ${name}`);
+    }
+
+    function triggerGlobalPO() {
+      showToast(`Processando Ordem Global de Compras da Frota (4 Lotes)... Sucesso!`);
+    }
+
+    // TOAST UTILITY
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-msg').innerText = message;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3500);
+    }
+  </script>
+</body>
+</html>

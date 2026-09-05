@@ -19,7 +19,9 @@ import {
   Clock,
   Award,
   Globe,
-  ChevronRight
+  ChevronRight,
+  TrendingUp,
+  Cpu
 } from 'lucide-react';
 import { TimeClockModal } from '../modals/TimeClockModal';
 
@@ -97,6 +99,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
         { id: 'managers' as ActiveView,     label: 'Gerentes', icon: Users },
       ] : []),
       { id: 'intelligence', label: 'Inteligência Operacional', icon: BrainCircuit },
+      { id: 'predictive' as ActiveView, label: 'Predição Andar & Uso', icon: TrendingUp },
+      { id: 'future_iot' as ActiveView, label: 'OTIS ONE & SCADA', icon: Cpu },
       ...(currentUser.role === 'GERENTE' ? [
         { id: 'supervisors' as ActiveView, label: 'Supervisores & Equipes', icon: Award },
       ] : currentUser.role !== 'PRESIDENTE' ? [

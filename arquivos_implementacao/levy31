@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OTIS ONE Enterprise - Telemetria & Gestão Operacional</title>
+    <style>
+        :root {
+            --otis-blue: #00205B;
+            --tech-sky: #00A3E0;
+            --neon-cyan: #00f3ff;
+            --emerald: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg-dark: #070b14;
+            --card-bg: rgba(11, 22, 44, 0.72);
+            --card-border: rgba(0, 163, 224, 0.22);
+            --card-border-glow: rgba(0, 243, 255, 0.4);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(0, 32, 91, 0.4) 0%, transparent 45%),
+                radial-gradient(circle at 85% 85%, rgba(0, 163, 224, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(7, 11, 20, 0.9) 0%, #070b14 100%);
+            background-attachment: fixed;
+            padding-bottom: 40px;
+        }
+
+        /* Header Layout */
+        header {
+            background: rgba(0, 32, 91, 0.45);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--card-border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 12px 24px;
+        }
+
+        .header-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .otis-badge {
+            background: linear-gradient(135deg, var(--otis-blue), #001030);
+            border: 2px solid var(--tech-sky);
+            color: #fff;
+            font-weight: 900;
+            font-size: 22px;
+            letter-spacing: 3px;
+            padding: 4px 14px;
+            border-radius: 6px;
+            box-shadow: 0 0 15px rgba(0, 163, 224, 0.4);
+        }
+
+        .brand-title h1 {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brand-title p {
+            font-size: 11px;
+            color: var(--tech-sky);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .header-status {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            font-size: 13px;
+        }
+
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 6px 12px;
+            border-radius: 20px;
+            color: var(--emerald);
+            font-weight: 600;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--emerald);
+            box-shadow: 0 0 8px var(--emerald);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .time-display {
+            color: var(--text-muted);
+            font-family: monospace;
+            font-size: 13px;
+        }
+
+        /* Container Principal */
+        .main-container {
+            max-width: 1600px;
+            margin: 24px auto;
+            padding: 0 24px;
+        }
+
+        /* Navigation Tabs */
+        .tabs-nav {
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid var(--card-border);
+            margin-bottom: 24px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+
+        .tab-button {
+            background: rgba(13, 25, 48, 0.5);
+            border: 1px solid var(--card-border);
+            border-bottom: none;
+            color: var(--text-muted);
+            padding: 12px 20px;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.25s ease;
+            white-space: nowrap;
+        }
+
+        .tab-button:hover {
+            color: #fff;
+            background: rgba(0, 163, 224, 0.15);
+            border-color: rgba(0, 163, 224, 0.4);
+        }
+
+        .tab-button.active {
+            background: linear-gradient(180deg, rgba(0, 163, 224, 0.25) 0%, rgba(0, 32, 91, 0.6) 100%);
+            color: #ffffff;
+            border-color: var(--tech-sky);
+            border-bottom: 3px solid var(--neon-cyan);
+            box-shadow: 0 -4px 15px rgba(0, 163, 224, 0.2);
+        }
+
+        /* Content Sections */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.35s ease-in-out forwards;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Glassmorphism Card System */
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-card:hover {
+            border-color: var(--card-border-glow);
+            box-shadow: 0 8px 32px 0 rgba(0, 163, 224, 0.15);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .card-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .card-title svg {
+            width: 18px;
+            height: 18px;
+            fill: none;
+            stroke: var(--tech-sky);
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* Grid Layouts */
+        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+        .grid-1-2 { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
+        .grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+
+        @media (max-width: 1100px) {
+            .grid-2, .grid-3, .grid-4, .grid-1-2, .grid-2-1 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* KPI Widget Box */
+        .kpi-card {
+            background: linear-gradient(135deg, rgba(0, 32, 91, 0.4), rgba(7, 11, 20, 0.6));
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            position: relative;
+        }
+
+        .kpi-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .kpi-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: -0.5px;
+        }
+
+        .kpi-subtext {
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .text-emerald { color: var(--emerald); }
+        .text-warning { color: var(--warning); }
+        .text-danger { color: var(--danger); }
+        .text-sky { color: var(--tech-sky); }
+        .text-cyan { color: var(--neon-cyan); }
+
+        /* Status Indicators & Badges */
+        .badge {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .badge-danger { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); }
+        .badge-warning { background: rgba(245, 158, 11, 0.2); color: #fde047; border: 1px solid rgba(245, 158, 11, 0.4); }
+        .badge-emerald { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.4); }
+        .badge-sky { background: rgba(0, 163, 224, 0.2); color: #7dd3fc; border: 1px solid rgba(0, 163, 224, 0.4); }
+
+        /* Data Tables */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            text-align: left;
+        }
+
+        th {
+            background: rgba(0, 32, 91, 0.6);
+            color: var(--tech-sky);
+            padding: 12px 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        td {
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: #e2e8f0;
+        }
+
+        tr:hover td {
+            background: rgba(0, 163, 224, 0.08);
+        }
+
+        /* Progress Bar */
+        .progress-bar-bg {
+            background: rgba(255, 255, 255, 0.1);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            width: 100%;
+            position: relative;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+            position: relative;
+        }
+
+        .progress-bar-fill::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        /* Form Controls & Inputs */
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 14px;
+        }
+
+        .control-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        select, input[type="text"], input[type="number"] {
+            background: rgba(7, 11, 20, 0.8);
+            border: 1px solid var(--card-border);
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        select:focus, input[type="text"]:focus, input[type="number"]:focus {
+            border-color: var(--tech-sky);
+            box-shadow: 0 0 8px rgba(0, 163, 224, 0.3);
+        }
+
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: rgba(0, 163, 224, 0.2);
+            border-radius: 3px;
+            border: 1px solid var(--card-border);
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: var(--neon-cyan);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 0 10px var(--neon-cyan);
+        }
+
+        /* Buttons */
+        .btn {
+            background: linear-gradient(135deg, var(--otis-blue), #003399);
+            border: 1px solid var(--tech-sky);
+            color: #fff;
+            padding: 10px 18px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn:hover {
+            background: linear-gradient(135deg, #003399, var(--tech-sky));
+            box-shadow: 0 0 15px rgba(0, 163, 224, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .btn-emerald {
+            background: linear-gradient(135deg, #064e3b, #047857);
+            border-color: var(--emerald);
+        }
+        .btn-emerald:hover {
+            background: linear-gradient(135deg, #047857, #10b981);
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 11px;
+        }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(3, 7, 18, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-container {
+            background: rgba(11, 22, 44, 0.95);
+            border: 1px solid var(--tech-sky);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 0 40px rgba(0, 163, 224, 0.3);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-body {
+            padding: 20px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #cbd5e1;
+        }
+
+        .modal-footer {
+            padding: 16px 20px;
+            border-top: 1px solid var(--card-border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .contract-box {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px dashed var(--tech-sky);
+            padding: 16px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            color: #93c5fd;
+            margin-top: 12px;
+        }
+
+        /* Canvas Chart Box */
+        .chart-box {
+            position: relative;
+            width: 100%;
+            height: 240px;
+        }
+
+        canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        /* SVG Icon Helpers */
+        .svg-icon {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            vertical-align: middle;
+            fill: currentColor;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER CORPORATIVO OTIS -->
+    <header>
+        <div class="header-container">
+            <div class="brand-logo">
+                <div class="otis-badge">OTIS</div>
+                <div class="brand-title">
+                    <h1>OTIS ONE™ ENTERPRISE HUB</h1>
+                    <p>Sistemas de Telemetria & Gestão Operacional LATAM</p>
+                </div>
+            </div>
+
+            <div class="header-status">
+                <div class="status-pill">
+                    <div class="status-dot"></div>
+                    <span>REDE DE TELEMETRIA OPERACIONAL</span>
+                </div>
+                <div class="time-display" id="liveClock">2025-02-23 --:--:--</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTAINER PRINCIPAL COM ABAS -->
+    <main class="main-container">
+        <!-- BARRA DE NAVEGAÇÃO ENTRE ABAS -->
+        <nav class="tabs-nav">
+            <button class="tab-button active" onclick="switchTab('tab1')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                1. MONITORAMENTO & ALERTAS REGIONAIS
+            </button>
+            <button class="tab-button" onclick="switchTab('tab2')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                2. TELEMETRIA ENERGÉTICA & REGEN®
+            </button>
+            <button class="tab-button" onclick="switchTab('tab3')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                3. GESTÃO PREDITIVA & CROSS-CITY
+            </button>
+            <button class="tab-button" onclick="switchTab('tab4')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                4. ANÁLISE DE DESGASTE & REVISÃO CONTRATUAL
+            </button>
+        </nav>
+
+        <!-- ABA 1: MONITORAMENTO & ALERTAS REGIONAIS -->
+        <section id="tab1" class="tab-content active">
+            <!-- ALERTA SÍSMICO MÉXICO -->
+            <div class="glass-card" style="margin-bottom: 20px; border-left: 4px solid var(--danger);">
+                <div class="card-header">
+                    <div class="card-title text-danger">
+                        <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        MONITORAMENTO SÍSMICO EM TEMPO REAL — CIDADE DO MÉXICO (CDMX) & OAXACA
+                    </div>
+                    <span class="badge badge-danger">ALERTA ATIVO - P1</span>
+                </div>
+
+                <div class="grid-4" style="margin-bottom: 16px;">
+                    <div class="kpi-card">
+                        <span class="kpi-label">Evento Recente</span>
+                        <span class="kpi-value text-danger">6.4 <small style="font-size: 14px;">Richter</small></span>
+                        <span class="kpi-subtext text-muted">Falha de Guerrero / Oaxaca</span>
+                    </div>
+                    <div class="kpi-card">
+                        <span class="kpi-label">Status dos Elevadores CDMX</span>
+                        <span class="kpi-value text-warning">42 <small style="font-size: 14px;">/ 180</small></span>
+                        <span class="kpi-subtext text-warning">Modo de Segurança Ativado</span>
+                    </div>
+                    <div class="kpi-card">
+                        <span class="kpi-label">Protocolo de Emergência</span>
+                        <span class="kpi-value text-emerald">100%</span>
+                        <span class="kpi-subtext text-emerald">Nivelamento no Andar Próximo</span>
+                    </div>
+                    <div class="kpi-card">
+                        <span class="kpi-label">Ação Manual</span>
+                        <button class="btn btn-sm" style="margin-top: 6px;" onclick="triggerSeismicSimulation()">Simular Teste de Parada</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PRIORIDADE DE UPGRADE DE SENSORES SÍSMICOS (TABELA FILTRÁVEL) -->
+            <div class="glass-card" style="margin-bottom: 20px;">
+                <div class="card-header">
+                    <div class="card-title">
+                        <svg viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                        LISTA DE PRIORIDADE: UPGRADE DE SENSORES SÍSMICOS (MÉXICO)
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <select id="seismicFilter" onchange="filterSeismicTable()">
+                            <option value="ALL">Todas as Severidades</option>
+                            <option value="CRITICAL">Apenas Críticos (P1)</option>
+                            <option value="WARNING">Apenas Alertas (P2)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table id="seismicTable">
+                        <thead>
+                            <tr>
+                                <th>ID Equipamento</th>
+                                <th>Edifício / Localização</th>
+                                <th>Desvio Calibração (m/s²)</th>
+                                <th>Horas de Uso</th>
+                                <th>Severidade</th>
+                                <th>Ação Recomendada</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr data-severity="CRITICAL">
+                                <td><strong>MX-CDMX-102</strong></td>
+                                <td>Torre Reforma - Shaft A</td>
+                                <td><span class="text-danger">0.84 m/s² (Alto)</span></td>
+                                <td>18,420 h</td>
+                                <td><span class="badge badge-danger">P1 CRÍTICO</span></td>
+                                <td><button class="btn btn-sm" onclick="alert('Ordem de serviço de substituição imediata emitida para MX-CDMX-102.')">Substituir Sensor</button></td>
+                            </tr>
+                            <tr data-severity="CRITICAL">
+                                <td><strong>MX-CDMX-108</strong></td>
+                                <td>Torre Reforma - Shaft C</td>
+                                <td><span class="text-danger">0.79 m/s² (Alto)</span></td>
+                                <td>17,900 h</td>
+                                <td><span class="badge badge-danger">P1 CRÍTICO</span></td>
+                                <td><button class="btn btn-sm" onclick="alert('Ordem de serviço de substituição imediata emitida para MX-CDMX-108.')">Substituir Sensor</button></td>
+                            </tr>
+                            <tr data-severity="WARNING">
+                                <td><strong>MX-CDMX-204</strong></td>
+                                <td>World Trade Center CDMX</td>
+                                <td><span class="text-warning">0.42 m/s² (Médio)</span></td>
+                                <td>14,100 h</td>
+                                <td><span class="badge badge-warning">P2 ALERTA</span></td>
+                                <td><button class="btn btn-sm" onclick="alert('Recalibração remota iniciada para MX-CDMX-204.')">Recalibrar Remoto</button></td>
+                            </tr>
+                            <tr data-severity="WARNING">
+                                <td><strong>MX-OAX-011</strong></td>
+                                <td>Plaza Oaxaca Centro</td>
+                                <td><span class="text-warning">0.38 m/s² (Médio)</span></td>
+                                <td>12,850 h</td>
+                                <td><span class="badge badge-warning">P2 ALERTA</span></td>
+                                <td><button class="btn btn-sm" onclick="alert('Recalibração remota iniciada para MX-OAX-011.')">Recalibrar Remoto</button></td>
+                            </tr>
+                            <tr data-severity="NORMAL">
+                                <td><strong>MX-CDMX-305</strong></td>
+                                <td>Centro Banamex - E3</td>
+                                <td><span class="text-emerald">0.05 m/s² (Ok)</span></td>
+                                <td>6,200 h</td>
+                                <td><span class="badge badge-emerald">P3 NORMAL</span></td>
+                                <td><button class="btn btn-sm" style="opacity: 0.6;" disabled>Monitorando</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ALERTAS CLIMÁTICOS REGIONAIS: FRIO SUL & LITORAL SANTOS -->
+            <div class="grid-2">
+                <!-- FRIO NO SUL -->
+                <div class="glass-card">
+                    <div class="card-header">
+                        <div class="card-title text-sky">
+                            <svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                            ALERTA CLIMÁTICO SAZONAL: ONDA DE FRIO SUL (RS, SC, PR)
+                        </div>
+                        <span class="badge badge-sky">CONTROLE TÉRMICO</span>
+                    </div>
+                    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 14px;">
+                        Temperaturas baixas aumentam a viscosidade do óleo hidráulico e dos lubrificantes das guias, elevando o consumo do drive em até 18%.
+                    </p>
+                    <div class="grid-2">
+                        <div class="kpi-card">
+                            <span class="kpi-label">Temp. Média POA</span>
+                            <span class="kpi-value text-sky">6.2 °C</span>
+                            <span class="kpi-subtext text-warning">Aquecedores Ativos (88%)</span>
+                        </div>
+                        <div class="kpi-card">
+                            <span class="kpi-label">Viscosidade Óleo Drive</span>
+                            <span class="kpi-value text-emerald">42 cSt</span>
+                            <span class="kpi-subtext text-emerald">Faixa Ideal Mantida</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- UMIDADE & MARESIA SANTOS -->
+                <div class="glass-card">
+                    <div class="card-header">
+                        <div class="card-title text-warning">
+                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+                            CORROSÃO POR MARESIA & UMIDADE (SANTOS / SP)
+                        </div>
+                        <span class="badge badge-warning">ALTA SALINIDADE</span>
+                    </div>
+                    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 14px;">
+                        Sensores de oxidação de superfície e relés de proteção contra surtos por umidade do ar costeira.
+                    </p>
+                    <div class="grid-2">
+                        <div class="kpi-card">
+                            <span class="kpi-label">Umidade Relativa Santos</span>
+                            <span class="kpi-value text-warning">89 %</span>
+                            <span class="kpi-subtext text-danger">Corrosão Acelerada</span>
+                        </div>
+                        <div class="kpi-card">
+                            <span class="kpi-label">Relé Anti-Corrosão</span>
+                            <span class="kpi-value text-emerald">ATIVO</span>
+                            <span class="kpi-subtext text-emerald">Proteção de Placa 100%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ABA 2: TELEMETRIA ENERGÉTICA & ECONOMIA FINANCIAL (REGEN DRIVE) -->
+        <section id="tab2" class="tab-content">
+            <!-- REGEN DRIVE KPIS -->
+            <div class="grid-4" style="margin-bottom: 20px;">
+                <div class="glass-card kpi-card">
+                    <span class="kpi-label">Energia Recuperada (Total)</span>
+                    <span class="kpi-value text-cyan" id="kpiEnergy">184,920 kWh</span>
+                    <span class="kpi-subtext text-emerald">↑ 14% este mês via Otis ReGen®</span>
+                </div>
+                <div class="glass-card kpi-card">
+                    <span class="kpi-label">CO₂ Evitado</span>
+                    <span class="kpi-value text-emerald" id="kpiCO2">138.69 Tons</span>
+                    <span class="kpi-subtext text-emerald">Pegada de Carbono Reduzida</span>
+                </div>
+                <div class="glass-card kpi-card">
+                    <span class="kpi-label">Equivalente em Árvores</span>
+                    <span class="kpi-value text-sky" id="kpiTrees">6,210 Árvores</span>
+                    <span class="kpi-subtext text-sky">Preservação Ambiental</span>
+                </div>
+                <div class="glass-card kpi-card">
+                    <span class="kpi-label">Geração em Tempo Real</span>
+                    <span class="kpi-value text-warning">48.5 kW</span>
+                    <span class="kpi-subtext text-warning">Pico durante descida pesada</span>
+                </div>
+            </div>
+
+            <!-- SIMULADOR FINANCEIRO & SELETOR DE MOEDA -->
+            <div class="grid-2-1" style="margin-bottom: 20px;">
+                <div class="glass-card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                            SIMULADOR DE ROI & PAYBACK DE DRIVES REGENERATIVOS
+                        </div>
+                        <!-- SELETOR DE MOEDA -->
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-currency active" id="currBRL" onclick="setCurrency('BRL')">BRL (R$)</button>
+                            <button class="btn btn-sm btn-currency" id="currMXN" onclick="setCurrency('MXN')">MXN ($)</button>
+                            <button class="btn btn-sm btn-currency" id="currUSD" onclick="setCurrency('USD')">USD ($)</button>
+                        </div>
+                    </div>
+
+                    <div class="grid-2" style="margin-bottom: 16px;">
+                        <div class="control-group">
+                            <label class="control-label">Viagens Diárias por Elevador: <span id="tripsValue" class="text-sky font-bold">1,200</span></label>
+                            <input type="range" id="sliderTrips" min="200" max="3000" step="50" value="1200" oninput="updateROICalculator()">
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label">Tarifa Energia (<span class="currency-label">R$</span>/kWh): <span id="tariffValue" class="text-sky font-bold">0.75</span></label>
+                            <input type="range" id="sliderTariff" min="0.20" max="3.00" step="0.05" value="0.75" oninput="updateROICalculator()">
+                        </div>
+                    </div>
+
+                    <!-- GRÁFICO PROJEÇÃO -->
+                    <div class="chart-box">
+                        <canvas id="roiChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- CARD RESULTADO DO ROI -->
+                <div class="glass-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div class="card-header">
+                            <div class="card-title text-emerald">RESULTADO PROJETADO</div>
+                        </div>
+                        
+                        <div style="margin-bottom: 20px;">
+                            <span class="kpi-label">Tempo de Amortização (Payback)</span>
+                            <div class="kpi-value text-emerald" id="paybackMonths" style="font-size: 36px;">14.2 Meses</div>
+                            <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Baseado no investimento médio por drive ReGen®</p>
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            <div class="glass-card" style="padding: 10px; background: rgba(0,0,0,0.3);">
+                                <span class="kpi-label">Economia Acumulada em 1 Ano</span>
+                                <div class="text-cyan" style="font-size: 18px; font-weight: 700;" id="sav1Year">R$ 48,200</div>
+                            </div>
+                            <div class="glass-card" style="padding: 10px; background: rgba(0,0,0,0.3);">
+                                <span class="kpi-label">Economia Acumulada em 5 Anos</span>
+                                <div class="text-cyan" style="font-size: 18px; font-weight: 700;" id="sav5Year">R$ 241,000</div>
+                            </div>
+                            <div class="glass-card" style="padding: 10px; background: rgba(0,0,0,0.3);">
+                                <span class="kpi-label">Economia Acumulada em 10 Anos</span>
+                                <div class="text-emerald" style="font-size: 20px; font-weight: 800;" id="sav10Year">R$ 482,000</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DETALHAMENTO POR UNIDADE -->
+            <div class="glass-card">
+                <div class="card-header">
+                    <div class="card-title">TELEMETRIA DETALHADA POR ELEVADOR REGEN®</div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Unidade</th>
+                                <th>Cidade</th>
+                                <th>Eficiência ReGen</th>
+                                <th>kWh Gerados (Mês)</th>
+                                <th>Economia Estimada</th>
+                                <th>Status do Inversor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>OTIS-SP-901</strong></td>
+                                <td>São Paulo (Av. Paulista)</td>
+                                <td>
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span>78%</span>
+                                        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 78%; background: var(--emerald);"></div></div>
+                                    </div>
+                                </td>
+                                <td>4,850 kWh</td>
+                                <td class="unit-savings" data-base="3637.5">R$ 3,637.50</td>
+                                <td><span class="badge badge-emerald">EFICIÊNCIA MÁXIMA</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>OTIS-MX-402</strong></td>
+                                <td>Cidade do México</td>
+                                <td>
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span>72%</span>
+                                        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 72%; background: var(--tech-sky);"></div></div>
+                                    </div>
+                                </td>
+                                <td>4,120 kWh</td>
+                                <td class="unit-savings" data-base="3090">R$ 3,090.00</td>
+                                <td><span class="badge badge-sky">OPERACIONAL</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>OTIS-SAN-104</strong></td>
+                                <td>Santos (Orla)</td>
+                                <td>
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span>65%</span>
+                                        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 65%; background: var(--warning);"></div></div>
+                                    </div>
+                                </td>
+                                <td>3,400 kWh</td>
+                                <td class="unit-savings" data-base="2550">R$ 2,550.00</td>
+                                <td><span class="badge badge-warning">REVISÃO RECOMENDADA</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>OTIS-POA-012</strong></td>
+                                <td>Porto Alegre (Centro)</td>
+                                <td>
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span>81%</span>
+                                        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 81%; background: var(--neon-cyan);"></div></div>
+                                    </div>
+                                </td>
+                                <td>5,100 kWh</td>
+                                <td class="unit-savings" data-base="3825">R$ 3,825.00</td>
+                                <td><span class="badge badge-emerald">EFICIÊNCIA MÁXIMA</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ABA 3: GESTÃO PREDITIVA & CROSS-CITY -->
+        <section id="tab3" class="tab-content">
+            <!-- PREVISÃO DE TROCA DE COMPONENTES -->
+            <div class="glass-card" style="margin-bottom: 20px;">
+                <div class="card-header">
+                    <div class="card-title">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        PREVISÃO DE MANUTENÇÃO PREDITIVA (PRÓXIMAS TROCAS DE PEÇAS)
+                    </div>
+                </div>
+                <div class="grid-3">
+                    <div class="glass-card" style="background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.3);">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div>
+                                <h4 style="color:#fff; font-size: 14px;">Inversor VVVF Drive</h4>
+                                <p style="font-size: 11px; color: var(--text-muted);">Unidade: CDMX-089</p>
+                            </div>
+                            <span class="badge badge-danger">18 DIAS RESTANTES</span>
+                        </div>
+                        <div style="margin-top: 14px;">
+                            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
+                                <span>Desgaste Térmico Acumulado</span>
+                                <span class="text-danger">94%</span>
+                            </div>
+                            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 94%; background: var(--danger);"></div></div>
+                        </div>
+                        <p style="font-size: 10px; color: var(--text-muted); margin-top: 10px;">Vibração Harmônica: 4.2 mm/s (Limite 4.5)</p>
+                    </div>
+
+                    <div class="glass-card" style="background: rgba(245, 158, 11, 0.08); border-color: rgba(245, 158, 11, 0.3);">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div>
+                                <h4 style="color:#fff; font-size: 14px;">Cabo de Tração Especial</h4>
+                                <p style="font-size: 11px; color: var(--text-muted);">Unidade: SAN-012 (Santos)</p>
+                            </div>
+                            <span class="badge badge-warning">42 DIAS RESTANTES</span>
+                        </div>
+                        <div style="margin-top: 14px;">
+                            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
+                                <span>Oxidação por Maresia</span>
+                                <span class="text-warning">82%</span>
+                            </div>
+                            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 82%; background: var(--warning);"></div></div>
+                        </div>
+                        <p style="font-size: 10px; color: var(--text-muted); margin-top: 10px;">Micro-fissuras detectadas via ultrassom</p>
+                    </div>
+
+                    <div class="glass-card" style="background: rgba(0, 163, 224, 0.08); border-color: rgba(0, 163, 224, 0.3);">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div>
+                                <h4 style="color:#fff; font-size: 14px;">Sapatas de Freio de Emergência</h4>
+                                <p style="font-size: 11px; color: var(--text-muted);">Unidade: SP-330 (São Paulo)</p>
+                            </div>
+                            <span class="badge badge-sky">120 DIAS RESTANTES</span>
+                        </div>
+                        <div style="margin-top: 14px;">
+                            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
+                                <span>Fricção Mecânica</span>
+                                <span class="text-sky">65%</span>
+                            </div>
+                            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 65%; background: var(--tech-sky);"></div></div>
+                        </div>
+                        <p style="font-size: 10px; color: var(--text-muted); margin-top: 10px;">Ciclos de Frenagem: 840,000</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COMPARATIVO CROSS-CITY DE VIDA ÚTIL & PROCUREMENT AGGREGATOR -->
+            <div class="grid-2">
+                <!-- GRÁFICO COMPARATIVO DE VIDA ÚTIL -->
+                <div class="glass-card">
+                    <div class="card-header">
+                        <div class="card-title">COMPARATIVO CROSS-CITY: VIDA ÚTIL DA MESMA PEÇA</div>
+                    </div>
+                    <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px;">
+                        Impacto direto do microclima e sismos na durabilidade média de Cabos de Tração (em Anos).
+                    </p>
+                    <div class="chart-box">
+                        <canvas id="crossCityChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- AGRUPAMENTO DE COMPRAS (PROCUREMENT AGGREGATOR) -->
+                <div class="glass-card">
+                    <div class="card-header">
+                        <div class="card-title">PROCUREMENT AGGREGATOR (COMPRAS EM ESCALA)</div>
+                    </div>
+                    <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 14px;">
+                        Consolidação de lotes para suprir desgastes preditivos em CDMX, Santos e POA com desconto de volume.
+                    </p>
+
+                    <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;">
+                        <label style="display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; cursor: pointer;">
+                            <div>
+                                <input type="checkbox" checked onchange="calculateProcurement()" class="proc-check" data-cost="12000" data-qty="10">
+                                <span style="font-size: 12px; margin-left: 8px; color: #fff;">Lote 10x Cabo de Tração Aço Inox (Santos/CDMX)</span>
+                            </div>
+                            <span class="text-sky" style="font-weight: 700;">R$ 120,000</span>
+                        </label>
+
+                        <label style="display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; cursor: pointer;">
+                            <div>
+                                <input type="checkbox" checked onchange="calculateProcurement()" class="proc-check" data-cost="28000" data-qty="5">
+                                <span style="font-size: 12px; margin-left: 8px; color: #fff;">Lote 5x Inversores ReGen® VVVF (CDMX/SP)</span>
+                            </div>
+                            <span class="text-sky" style="font-weight: 700;">R$ 140,000</span>
+                        </label>
+
+                        <label style="display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; cursor: pointer;">
+                            <div>
+                                <input type="checkbox" onchange="calculateProcurement()" class="proc-check" data-cost="4500" data-qty="15">
+                                <span style="font-size: 12px; margin-left: 8px; color: #fff;">Lote 15x Sensores Sísmicos Triaxiais (México)</span>
+                            </div>
+                            <span class="text-sky" style="font-weight: 700;">R$ 67,500</span>
+                        </label>
+                    </div>
+
+                    <div style="border-top: 1px solid var(--card-border); padding-top: 12px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 11px; color: var(--text-muted);">Economia por Escala (<span id="procDiscountPct">18%</span>):</div>
+                            <div style="font-size: 20px; font-weight: 800;" class="text-emerald" id="procSavings">R$ 46,800</div>
+                        </div>
+                        <button class="btn btn-emerald" onclick="generatePurchaseOrder()">Gerar Ordem de Compra (PO)</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ABA 4: ANÁLISE DE DESGASTE & REVISÃO CONTRATUAL -->
+        <section id="tab4" class="tab-content">
+            <div class="glass-card" style="margin-bottom: 20px;">
+                <div class="card-header">
+                    <div class="card-title text-warning">
+                        <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        MOTOR DE DETECÇÃO DE ANOMALIAS: DESGASTE REAL VS ESPERADO EM CONTRATO
+                    </div>
+                    <span class="badge badge-warning">5 UNIDADES COM DESVIO > 30%</span>
+                </div>
+
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">
+                    O sistema correlaciona a telemetria ambiental (maresia, microssismos locais, ciclo de tráfego fora da curva) para identificar contratos em risco de rentabilidade devido a uso severo não previsto.
+                </p>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Unidade</th>
+                                <th>Cidade / Região</th>
+                                <th>Fator Severidade Atribuído</th>
+                                <th>Desgaste Esperado (Contrato)</th>
+                                <th>Desgaste Medido (Telemetria)</th>
+                                <th>Anomalia / Desvio</th>
+                                <th>Ação Recomendada</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>OTIS-SAN-104</strong></td>
+                                <td>Santos (Orla)</td>
+                                <td>Salinidade Extrema + Umidade</td>
+                                <td>25% / ano</td>
+                                <td><span class="text-danger">58% / ano</span></td>
+                                <td><span class="badge badge-danger">+33% ANORMAL</span></td>
+                                <td><button class="btn btn-sm" onclick="openContractModal('OTIS-SAN-104', 'Santos - Orla', 'Salinidade e Umidade Costeira Extrema', '+33%')">Revisar Cláusula 8.2</button></td>
+                            </tr>
+                            <tr>
+                                <td><strong>OTIS-MX-102</strong></td>
+                                <td>Cidade do México</td>
+                                <td>Microssismos + Poeira Mineral</td>
+                                <td>20% / ano</td>
+                                <td><span class="text-danger">52% / ano</span></td>
+                                <td><span class="badge badge-danger">+32% ANORMAL</span></td>
+                                <td><button class="btn btn-sm" onclick="openContractModal('OTIS-MX-102', 'Cidade do México', 'Atividade Sísmica Acelerada e Poeira', '+32%')">Revisar Cláusula 8.2</button></td>
+                            </tr>
+                            <tr>
+                                <td><strong>OTIS-SP-901</strong></td>
+                                <td>São Paulo</td>
+                                <td>Tráfego Intenso (2,800 viag/dia)</td>
+                                <td>40% / ano</td>
+                                <td><span class="text-warning">54% / ano</span></td>
+                                <td><span class="badge badge-warning">+14% MODERADO</span></td>
+                                <td><button class="btn btn-sm btn-emerald" onclick="alert('Relatório de ajuste de manutenção preventiva gerado.')">Ajustar Preventiva</button></td>
+                            </tr>
+                            <tr>
+                                <td><strong>OTIS-POA-012</strong></td>
+                                <td>Porto Alegre</td>
+                                <td>Amplitude Térmica Sazonal</td>
+                                <td>20% / ano</td>
+                                <td><span class="text-emerald">22% / ano</span></td>
+                                <td><span class="badge badge-emerald">DENTRO DA MARGEM</span></td>
+                                <td><button class="btn btn-sm" style="opacity:0.5;" disabled>Sem Ação</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- REGIME SEVERO DETALHES -->
+            <div class="grid-2">
+                <div class="glass-card">
+                    <div class="card-header">
+                        <div class="card-title">CLÁUSULA 8.2 — USO SEVERO E EXPOSIÇÃO EXTRAORDINÁRIA</div>
+                    </div>
+                    <p style="font-size: 12px; color: #cbd5e1; line-height: 1.6;">
+                        Conforme os dados telemétricos auditáveis e imutáveis coletados pelos sensores OTIS ONE™, quando as condições ambientais ou o volume diário suplantam em <strong>>30%</strong> os limites nominais da norma ISO 18738, fica facultado à OTIS solicitar o reequilíbrio econômico-financeiro da taxa de manutenção preventiva/corretiva das peças de desgaste rápido.
+                    </p>
+                </div>
+
+                <div class="glass-card" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+                    <h3 style="color:#fff; margin-bottom: 8px;">Minutas Automáticas Prontas</h3>
+                    <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 16px;">2 Contratos qualificados para aplicação imediata de Aditivo Contratual.</p>
+                    <button class="btn btn-emerald" onclick="openContractModal('OTIS-SAN-104', 'Santos - Orla', 'Salinidade e Umidade Costeira Extrema', '+33%')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        Gerar Aditivo de Contrato Agora
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- MODAL DE ADITIVO CONTRATUAL -->
+    <div class="modal-overlay" id="contractModal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 style="color: #fff; font-size: 16px;" id="modalTitle">MINUTA DE ADITIVO CONTRATUAL — REVISÃO DE REGIME</h3>
+                <button onclick="closeContractModal()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size: 20px;">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>O presente documento justifica tecnicamente a atualização do valor mensal de manutenção com base no Anexo de Telemetria Ambiental OTIS ONE™.</p>
+                
+                <div class="contract-box" id="contractText">
+                    <!-- Gerado via JS -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" style="background: transparent; border-color: var(--text-muted);" onclick="closeContractModal()">Cancelar</button>
+                <button class="btn btn-emerald" onclick="exportContract()">Exportar Minuta em PDF / Impressão</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT NATIVO -->
+    <script>
+        // --- LIVE CLOCK ---
+        function updateClock() {
+            const now = new Date();
+            const str = now.getFullYear() + '-' +
+                String(now.getMonth() + 1).padStart(2, '0') + '-' +
+                String(now.getDate()).padStart(2, '0') + ' ' +
+                String(now.getHours()).padStart(2, '0') + ':' +
+                String(now.getMinutes()).padStart(2, '0') + ':' +
+                String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('liveClock').innerText = str + ' UTC-3';
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // --- TAB SWITCHING ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+
+            if (tabId === 'tab2') {
+                renderROIChart();
+            } else if (tabId === 'tab3') {
+                renderCrossCityChart();
+            }
+        }
+
+        // --- ABA 1: SISMICO SIMULATION & FILTER ---
+        function filterSeismicTable() {
+            const val = document.getElementById('seismicFilter').value;
+            const rows = document.querySelectorAll('#seismicTable tbody tr');
+            rows.forEach(row => {
+                const sev = row.getAttribute('data-severity');
+                if (val === 'ALL' || val === sev) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        function triggerSeismicSimulation() {
+            alert('INICIANDO TESTE DE PARADA SÍSMICA EM SIMULAÇÃO:\n\n1. Sinais de acelerômetro simulados (0.65 m/s²).\n2. 42 Elevadores direcionados para o andar mais próximo.\n3. Abertura de portas e desligamento de tração concluído em 4.2s com sucesso.');
+        }
+
+        // --- ABA 2: REGEN & FINANCIAL CALCULATOR ---
+        let currentCurrency = 'BRL';
+        const currencyRates = {
+            'BRL': { symbol: 'R$', rate: 1.0, tariffDefault: 0.75 },
+            'MXN': { symbol: '$', rate: 3.2, tariffDefault: 2.30 },
+            'USD': { symbol: '$', rate: 0.20, tariffDefault: 0.18 }
+        };
+
+        function setCurrency(curr) {
+            currentCurrency = curr;
+            document.querySelectorAll('.btn-currency').forEach(b => b.classList.remove('active'));
+            document.getElementById('curr' + curr).classList.add('active');
+
+            const cData = currencyRates[curr];
+            document.querySelectorAll('.currency-label').forEach(el => el.innerText = cData.symbol);
+            document.getElementById('sliderTariff').value = cData.tariffDefault;
+            
+            updateROICalculator();
+            updateUnitSavingsTable();
+        }
+
+        function updateUnitSavingsTable() {
+            const cData = currencyRates[currentCurrency];
+            document.querySelectorAll('.unit-savings').forEach(td => {
+                const baseValBRL = parseFloat(td.getAttribute('data-base'));
+                const converted = baseValBRL * cData.rate;
+                td.innerText = cData.symbol + ' ' + converted.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            });
+        }
+
+        function updateROICalculator() {
+            const trips = parseInt(document.getElementById('sliderTrips').value);
+            const tariff = parseFloat(document.getElementById('sliderTariff').value);
+            document.getElementById('tripsValue').innerText = trips.toLocaleString();
+            document.getElementById('tariffValue').innerText = tariff.toFixed(2);
+
+            // Fórmula simplificada de economia por viagem
+            const kWhPerTripSavings = 0.015; 
+            const dailySavingsPerElevator = trips * kWhPerTripSavings * tariff;
+            const elevators = 5; // frota média
+            const annualSavings = dailySavingsPerElevator * 365 * elevators;
+            const cData = currencyRates[currentCurrency];
+
+            const sav1 = annualSavings;
+            const sav5 = annualSavings * 5;
+            const sav10 = annualSavings * 10;
+
+            // Custo por Drive ReGen
+            const driveCost = 35000 * cData.rate;
+            const paybackMonths = ((driveCost * elevators) / (annualSavings / 12)).toFixed(1);
+
+            document.getElementById('paybackMonths').innerText = paybackMonths + ' Meses';
+            document.getElementById('sav1Year').innerText = cData.symbol + ' ' + Math.round(sav1).toLocaleString('pt-BR');
+            document.getElementById('sav5Year').innerText = cData.symbol + ' ' + Math.round(sav5).toLocaleString('pt-BR');
+            document.getElementById('sav10Year').innerText = cData.symbol + ' ' + Math.round(sav10).toLocaleString('pt-BR');
+
+            renderROIChart(sav1, sav5, sav10);
+        }
+
+        // --- CANVAS CHART: ROI ---
+        function renderROIChart(s1 = 48200, s5 = 241000, s10 = 482000) {
+            const canvas = document.getElementById('roiChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            
+            // Adjust canvas resolution
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+
+            const w = canvas.width;
+            const h = canvas.height;
+
+            ctx.clearRect(0, 0, w, h);
+
+            // Draw Background Grid
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < h; i += 40) {
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(w, i);
+                ctx.stroke();
+            }
+
+            // Draw Line Chart
+            const points = [
+                { x: 40, y: h - 30 },
+                { x: w * 0.33, y: h - 30 - (h * 0.2) },
+                { x: w * 0.66, y: h - 30 - (h * 0.5) },
+                { x: w - 30, y: h - 30 - (h * 0.8) }
+            ];
+
+            // Area Gradient
+            const grad = ctx.createLinearGradient(0, 0, 0, h);
+            grad.addColorStop(0, 'rgba(0, 243, 255, 0.3)');
+            grad.addColorStop(1, 'rgba(0, 32, 91, 0.0)');
+
+            ctx.beginPath();
+            ctx.moveTo(points[0].x, points[0].y);
+            points.forEach(p => ctx.lineTo(p.x, p.y));
+            ctx.lineTo(points[points.length - 1].x, h - 30);
+            ctx.lineTo(points[0].x, h - 30);
+            ctx.closePath();
+            ctx.fillStyle = grad;
+            ctx.fill();
+
+            // Line
+            ctx.beginPath();
+            ctx.moveTo(points[0].x, points[0].y);
+            points.forEach(p => ctx.lineTo(p.x, p.y));
+            ctx.strokeStyle = '#00f3ff';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // Points
+            points.forEach((p, idx) => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+                ctx.fillStyle = '#00A3E0';
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Labels
+                ctx.fillStyle = '#94a3b8';
+                ctx.font = '10px sans-serif';
+                const labelText = idx === 0 ? 'Ano 0' : idx === 1 ? 'Ano 1' : idx === 2 ? 'Ano 5' : 'Ano 10';
+                ctx.fillText(labelText, p.x - 12, h - 10);
+            });
+        }
+
+        // --- ABA 3: CROSS-CITY CANVAS CHART & PROCUREMENT ---
+        function renderCrossCityChart() {
+            const canvas = document.getElementById('crossCityChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+
+            const w = canvas.width;
+            const h = canvas.height;
+
+            ctx.clearRect(0, 0, w, h);
+
+            const data = [
+                { city: 'Cidade do México (Sismos/Poeira)', years: 5.2, color: '#ef4444' },
+                { city: 'Santos (Maresia/Umidade)', years: 3.8, color: '#f59e0b' },
+                { city: 'São Paulo (Tráfego Severo)', years: 6.5, color: '#00A3E0' },
+                { city: 'Porto Alegre (Sazonal Padrão)', years: 7.8, color: '#10b981' }
+            ];
+
+            const maxYears = 10;
+            const barHeight = 28;
+            const startY = 20;
+
+            data.forEach((item, index) => {
+                const y = startY + (index * 50);
+                const barWidth = (item.years / maxYears) * (w - 180);
+
+                // City Name
+                ctx.fillStyle = '#e2e8f0';
+                ctx.font = '11px sans-serif';
+                ctx.fillText(item.city, 10, y + 12);
+
+                // Background Bar
+                ctx.fillStyle = 'rgba(255,255,255,0.05)';
+                ctx.fillRect(160, y, w - 180, barHeight);
+
+                // Filled Bar
+                ctx.fillStyle = item.color;
+                ctx.fillRect(160, y, barWidth, barHeight);
+
+                // Value Text
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 11px sans-serif';
+                ctx.fillText(item.years + ' Anos', 170 + barWidth, y + 18);
+            });
+        }
+
+        function calculateProcurement() {
+            let total = 0;
+            let count = 0;
+            document.querySelectorAll('.proc-check:checked').forEach(chk => {
+                total += parseFloat(chk.getAttribute('data-cost'));
+                count += parseInt(chk.getAttribute('data-qty'));
+            });
+
+            const discountPct = count > 20 ? 0.22 : count > 10 ? 0.18 : 0.10;
+            const savings = total * discountPct;
+
+            document.getElementById('procDiscountPct').innerText = Math.round(discountPct * 100) + '%';
+            document.getElementById('procSavings').innerText = 'R$ ' + savings.toLocaleString('pt-BR');
+        }
+
+        function generatePurchaseOrder() {
+            alert('ORDEM DE COMPRA CONSOLIDADA GERADA:\n\n- Desconto em Escala Aplicado automaticamente.\n- Requisição enviada para a fábrica Otis Indaiatuba / Fornecedores Internacionais.');
+        }
+
+        // --- ABA 4: CONTRACT MODAL & JUSTIFICATION ---
+        function openContractModal(unit, location, reason, excess) {
+            const modal = document.getElementById('contractModal');
+            document.getElementById('modalTitle').innerText = 'ADITIVO CONTRATUAL — REEQUILÍBRIO TÉCNICO (' + unit + ')';
+            
+            const text = 
+`TERMO ADITIVO DE MANUTENÇÃO E TELEMETRIA DE ATIVOS — OTIS ONE™
+
+UNIDADE REGISTRADA: ${unit}
+LOCALIZAÇÃO: ${location}
+FATOR AMBIENTAL CRÍTICO: ${reason}
+DESVIO DE DESGASTE CONTRATUAL AUDITADO: ${excess} ACIMA DO LIMITE NOMINAL
+
+CONSIDERANDO QUE:
+1. Os dados de sensores IoT de aceleração, vibração e umidade comprovaram estresse mecânico atípico associado às condições da região.
+2. A Cláusula 8.2 do Contrato Principal prevê a revisão do valor de cobertura preventiva quando o uso severo ultrapassar 30% da média das tabelas normativas ISO 18738.
+
+DELIBERAÇÃO:
+- Ajuste na taxa mensal de conservação de +15.4% a partir do próximo ciclo.
+- Inclusão de inspeção preditiva especial trimestral com ultrassom em cabos e drive sem custo adicional de mão de obra.
+
+JUSTIFICATIVA TÉCNICA GERADA EM: ${new Date().toLocaleDateString('pt-BR')} VIA OTIS ENGINE.`;
+
+            document.getElementById('contractText').innerText = text;
+            modal.classList.add('active');
+        }
+
+        function closeContractModal() {
+            document.getElementById('contractModal').classList.remove('active');
+        }
+
+        function exportContract() {
+            alert('Minuta de Aditivo exportada com sucesso em formato digital assinado pelo sistema OTIS ONE™.');
+            closeContractModal();
+        }
+
+        // Init calculations on load
+        window.onload = function() {
+            updateROICalculator();
+            calculateProcurement();
+        };
+    </script>
+</body>
+</html>

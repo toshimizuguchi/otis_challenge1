@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Análise Preditiva de Chamados</title>
+  <!-- Chart.js para geração do gráfico -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <header>
+    <div>
+      <h1>ANÁLISE PREDITIVA DE CHAMADOS</h1>
+      <p>Plataforma de Inteligência Preditiva & Análise por Andar</p>
+    </div>
+
+    <!-- Status, Data e Hora Centralizada -->
+    <div>
+      <div>SISTEMA OPERACIONAL</div>
+      <div id="liveDateTime">--/--/---- - --:--:--</div>
+    </div>
+  </header>
+
+  <!-- Módulo Operacional (+1 chamado por clique) -->
+  <section>
+    <h2>Módulo de Entrada Operacional (Incremento Unitário)</h2>
+    <div>
+      <input type="number" id="andarInput" placeholder="Número do andar (ex: 3)" min="0">
+      <button onclick="registrarChamadoManualmente()">+1 Registrar Chamado</button>
+      
+      <div>
+        <button onclick="registrarAtalho(1)">+1 no Andar 1</button>
+        <button onclick="registrarAtalho(2)">+1 no Andar 2</button>
+        <button onclick="registrarAtalho(3)">+1 no Andar 3</button>
+        <button onclick="registrarAtalho(4)">+1 no Andar 4</button>
+        <button onclick="registrarAtalho(5)">+1 no Andar 5</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Cards de KPI Executivos -->
+  <section>
+    <div>
+      <h3>Maior Recorrência Atual</h3>
+      <div id="kpiAndarLider">-</div>
+      <div id="kpiTotalLider">0 chamados acumulados</div>
+    </div>
+
+    <div>
+      <h3>Volume Total Consolidado</h3>
+      <div id="kpiTotalGeral">0</div>
+      <div>Base histórica integrada</div>
+    </div>
+
+    <div>
+      <h3>Projeção Preditiva Líder</h3>
+      <div id="kpiProjecaoLider">-</div>
+      <div id="kpiStatusTrend">Calculando tendência...</div>
+    </div>
+
+    <div>
+      <h3>Nível de Eficiência SLA</h3>
+      <div id="kpiSla">96.4%</div>
+      <div>Dentro das metas corporativas</div>
+    </div>
+  </section>
+
+  <!-- Grid Principal (Tabela + Gráfico) -->
+  <main>
+    <!-- Tabela de Ranking -->
+    <section>
+      <h2>Ranking Executivo por Recorrência</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Posição / Andar</th>
+            <th>Atual</th>
+            <th>Participação (%)</th>
+            <th>Projeção Preditiva</th>
+            <th>Status de Risco</th>
+          </tr>
+        </thead>
+        <tbody id="tabelaCorpo"></tbody>
+      </table>
+    </section>
+
+    <!-- Gráfico Comparativo Chart.js -->
+    <section>
+      <h2>Volume Atual vs. Projeção Preditiva</h2>
+      <div>
+        <canvas id="graficoPreditivo"></canvas>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // Série histórica por andar [Mês 1, Mês 2, Mês 3, Mês Atual]
+    const historicoAndares = {
+      1: [6, 8, 9, 11],
+      2: [14, 12, 10, 7],
+      3: [12, 18, 26, 35],
+      4: [3, 2, 4, 3],
+      5: [9, 11, 14, 18]
+    };
+
+    let graficoChartJS = null;
+
+    // Relógio em tempo real
+    function atualizarDataHora() {
+      const agora = new Date();
+      const dia = String(agora.getDate()).padStart(2, '0');
+      const mes = String(agora.getMonth() + 1).padStart(2, '0');
+      const ano = agora.getFullYear();
+      const horas = String(agora.getHours()).padStart(2, '0');
+      const minutos = String(agora.getMinutes()).padStart(2, '0');
+      const segundos = String(agora.getSeconds()).padStart(2, '0');
+
+      document.getElementById('liveDateTime').innerText = `${dia}/${mes}/${ano} - ${horas}:${minutos}:${segundos}`;
+    }
+    setInterval(atualizarDataHora, 1000);
+    atualizarDataHora();
+
+    // Regressão Linear Preditiva
+    function calcularPredicao(serie) {
+      const n = serie.length;
+      if (n < 2) return { previsao: serie[0] || 0, inclinacao: 0 };
+
+      const x = Array.from({ length: n }, (_, i) => i + 1);
+      const y = serie;
+
+      const sumX = x.reduce((a, b) => a + b, 0);
+      const sumY = y.reduce((a, b) => a + b, 0);
+      const sumXY = x.reduce((a, b, i) => a + (b * y[i]), 0);
+      const sumXX = x.reduce((a, b) => a + (b * b), 0);
+
+      const inclinacao = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+      const intercepto = (sumY - inclinacao * sumX) / n;
+
+      const proximoPeriodo = n + 1;
+      const previsao = Math.max(0, Math.round(inclinacao * proximoPeriodo + intercepto));
+
+      return { previsao, inclinacao };
+    }
+
+    function processarDashboard() {
+      const listaAndares = Object.keys(historicoAndares);
+      let totalGeral = 0;
+      let andarLider = null;
+      let maxChamados = -1;
+
+      let andarMaiorRisco = null;
+      let maiorPrevisaoPreditiva = -1;
+      let maiorInclinacao = 0;
+
+      const relatorio = [];
+
+      listaAndares.forEach(andar => {
+        const historico = historicoAndares[andar];
+        const atual = historico[historico.length - 1];
+        totalGeral += atual;
+
+        if (atual > maxChamados) {
+          maxChamados = atual;
+          andarLider = andar;
+        }
+
+        const predicao = calcularPredicao(historico);
+
+        if (predicao.previsao > maiorPrevisaoPreditiva) {
+          maiorPrevisaoPreditiva = predicao.previsao;
+          andarMaiorRisco = andar;
+          maiorInclinacao = predicao.inclinacao;
+        }
+
+        relatorio.push({
+          andar: `Andar ${andar}`,
+          numAndar: andar,
+          atual,
+          previsao: predicao.previsao,
+          inclinacao: predicao.inclinacao
+        });
+      });
+
+      relatorio.sort((a, b) => b.atual - a.atual);
+
+      // Atualização dos KPIs
+      document.getElementById('kpiTotalGeral').innerText = totalGeral;
+      document.getElementById('kpiAndarLider').innerText = `Andar ${andarLider}`;
+      document.getElementById('kpiTotalLider').innerText = `${maxChamados} chamados (${((maxChamados / totalGeral) * 100).toFixed(1)}%)`;
+
+      document.getElementById('kpiProjecaoLider').innerText = `Andar ${andarMaiorRisco}`;
+      document.getElementById('kpiStatusTrend').innerText = `Est. ${maiorPrevisaoPreditiva} chamados (${maiorInclinacao > 0 ? 'Alta Demanda' : 'Estável'})`;
+
+      // Atualização da Tabela
+      const tbody = document.getElementById('tabelaCorpo');
+      tbody.innerHTML = '';
+
+      relatorio.forEach((item, index) => {
+        const perc = totalGeral > 0 ? ((item.atual / totalGeral) * 100).toFixed(1) : 0;
+        
+        let statusText = 'Normal';
+        if (item.inclinacao > 2.0) {
+          statusText = 'Crítico / Alta';
+        } else if (item.inclinacao > 0.5) {
+          statusText = 'Atenção';
+        }
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${index + 1}º - ${item.andar}</strong></td>
+          <td><strong>${item.atual}</strong></td>
+          <td>${perc}%</td>
+          <td><strong>${item.previsao} chamados</strong></td>
+          <td><span>${statusText}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      renderizarGrafico(relatorio);
+    }
+
+    // Gráfico Chart.js
+    function renderizarGrafico(dados) {
+      const labels = dados.map(d => d.andar);
+      const dadosAtuais = dados.map(d => d.atual);
+      const dadosProjeção = dados.map(d => d.previsao);
+
+      if (graficoChartJS) {
+        graficoChartJS.destroy();
+      }
+
+      const ctx = document.getElementById('graficoPreditivo').getContext('2d');
+      graficoChartJS = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Volume Atual',
+              data: dadosAtuais
+            },
+            {
+              label: 'Projeção Preditiva',
+              data: dadosProjeção
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false
+        }
+      });
+    }
+
+    // Ações de registro (+1 por clique)
+    function registrarChamadoManualmente() {
+      const input = document.getElementById('andarInput');
+      const andar = parseInt(input.value);
+
+      if (isNaN(andar) || andar < 0) {
+        alert('Por favor, informe um número de andar válido.');
+        return;
+      }
+
+      adicionarUmChamado(andar);
+      input.value = '';
+    }
+
+    function registrarAtalho(andar) {
+      adicionarUmChamado(andar);
+    }
+
+    function adicionarUmChamado(andar) {
+      if (!historicoAndares[andar]) {
+        historicoAndares[andar] = [0, 0, 0, 0];
+      }
+
+      const ultimoIndice = historicoAndares[andar].length - 1;
+      historicoAndares[andar][ultimoIndice] += 1;
+
+      processarDashboard();
+    }
+
+    processarDashboard();
+  </script>
+</body>
+</html>
