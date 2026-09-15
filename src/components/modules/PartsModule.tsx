@@ -473,14 +473,16 @@ export const PartsModule: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-slate-300 font-medium mb-1">Vincular a uma Ordem de Serviço *</label>
+                <label className="block text-slate-300 font-medium mb-1">
+                  Vincular a uma Ordem de Serviço {openCalls.length > 0 ? '*' : '(Opcional)'}
+                </label>
                 <select
                   value={selectedCallId}
                   onChange={(e) => setSelectedCallId(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-slate-200 focus:border-cyan-500"
-                  required
+                  required={openCalls.length > 0}
                 >
-                  <option value="">Selecione o chamado...</option>
+                  <option value="">{openCalls.length > 0 ? 'Selecione o chamado...' : 'Sem chamado ativo — Reposição de Estoque Móvel da Viatura'}</option>
                   {openCalls.map(c => (
                     <option key={c.id} value={c.id}>
                       {c.callNumber} — {c.equipmentTag} ({c.customerName})

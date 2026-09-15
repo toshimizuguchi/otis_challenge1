@@ -9,7 +9,8 @@ import {
   SlidersHorizontal,
   Menu,
   ChevronRight,
-  MessageSquare
+  MessageSquare,
+  RotateCcw
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -28,7 +29,7 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export const Header: React.FC<HeaderProps> = ({ onOpenAIChat, onToggleMobileMenu }) => {
-  const { currentUser, switchRole, logout, alerts, setActiveView } = useApp();
+  const { currentUser, switchRole, logout, alerts, setActiveView, resetToCleanState } = useApp();
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const roleRef = useRef<HTMLDivElement>(null);
@@ -218,6 +219,17 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAIChat, onToggleMobileMenu
                   <span>Configurações</span>
                 </button>
               )}
+
+              {/* Botão Limpar Ambiente / Apresentação */}
+              <button
+                onClick={() => { resetToCleanState(); setUserMenuOpen(false); }}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 transition-all cursor-pointer"
+                title="Zera todos os chamados e deixa o sistema limpo para demonstrar fluxos"
+              >
+                <RotateCcw size={13} className="text-cyan-400" />
+                <span>Resetar para a Banca</span>
+              </button>
+
               {/* Botão Sair do Sistema Preenchido */}
               <button
                 onClick={() => { logout(); setUserMenuOpen(false); }}

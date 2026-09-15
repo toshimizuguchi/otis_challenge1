@@ -189,7 +189,7 @@ interface AppContextType {
   
   // Toasts
   toasts: ToastMessage[];
-  addToast: (toast: Omit<ToastMessage, 'id'>) => void;
+  addToast: (toast: Omit<ToastMessage, 'id'> | 'success' | 'info' | 'warning' | 'error', title?: string, message?: string) => void;
   removeToast: (id: string) => void;
   
   // Quick Filter State
@@ -211,11 +211,14 @@ interface AppContextType {
   // Theme & Visual Identity
   theme: AppTheme;
   setTheme: (theme: AppTheme) => void;
+
+  // Demo / Presentation controls
+  resetToCleanState: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const STORAGE_PREFIX = 'otis_smartflow_v1_';
+const STORAGE_PREFIX = 'otis_smartflow_v2_';
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Authentication State
@@ -388,9 +391,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem(STORAGE_PREFIX + 'tech_logs', JSON.stringify(techActivityLogs));
   }, [techActivityLogs]);
 
-  const addToast = (toast: Omit<ToastMessage, 'id'>) => {
+  const addToast = (toastOrType: Omit<ToastMessage, 'id'> | 'success' | 'info' | 'warning' | 'error', title?: string, message?: string) => {
     const id = 'toast-' + Math.random().toString(36).substring(2, 9);
-    setToasts((prev) => [...prev, { ...toast, id }]);
+    const toastObj: ToastMessage = typeof toastOrType === 'string'
+      ? { id, type: toastOrType, title: title || '', message: message || '' }
+      : { ...toastOrType, id };
+    setToasts((prev) => [...prev, toastObj]);
     setTimeout(() => {
       removeToast(id);
     }, 4500);
@@ -709,6 +715,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setCalls((prev) => [newCall, ...prev]);
 
+    // Update assigned technician status to A_CAMINHO and link currentCallId
+    if (chosenTechId) {
+      setTechnicians((prev) =>
+        prev.map((t) =>
+          t.id === chosenTechId
+            ? { ...t, status: 'A_CAMINHO', currentCallId: newCall.id, overdueAlert: false }
+            : t
+        )
+      );
+    }
+
+    // Update equipment status based on incident severity
+    setEquipments((prev) =>
+      prev.map((e) =>
+        e.id === equipment.id
+          ? { ...e, status: newCall.hasTrappedPassenger || newCall.isCarStopped ? 'PARADO' : 'EM_RISCO' }
+          : e
+      )
+    );
+
     // Create system alert if critical
     if (newCall.priority === 'CRITICO' || newCall.hasTrappedPassenger || (newCall.severityLevel ?? 0) >= 4) {
       const newAlert: SystemAlert = {
@@ -729,6 +755,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setAlerts((prev) => [newAlert, ...prev]);
     }
 
+    // Add log to Tech Activity Log timeline
+    const nowTimeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const todayDateString = `Hoje, ${new Date().toLocaleDateString('pt-BR')}`;
+    setTechActivityLogs((prev) => [
+      {
+        id: 'tlog-' + Date.now(),
+        type: 'CHECK_IN',
+        timestamp: nowTimeString,
+        date: todayDateString,
+        title: `Novo Chamado Despachado: ${callNumber}`,
+        description: `Ordem aberta e atribuída para ${chosenTechName}. Defeito: ${newCall.problemDescription}. Gravidade: ${newCall.severityLevel}/5.`,
+        callNumber,
+        equipmentTag: newCall.equipmentTag,
+        buildingName: newCall.buildingName,
+        technicianName: chosenTechName,
+        metadata: {
+          customer: newCall.customerName,
+          priority: newCall.priority,
+          sla: `${newCall.slaMaxHours}h`
+        }
+      },
+      ...prev
+    ]);
+
     addToast({
       type: 'success',
       title: 'Chamado Aberto com Sucesso!',
@@ -739,9 +789,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateCallStatus = (callId: string, status: Call['status'], note?: string) => {
+    let affectedCall: Call | undefined;
+
     setCalls((prev) =>
       prev.map((c) => {
         if (c.id !== callId) return c;
+        affectedCall = c;
         const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const stepLabels: Record<Call['status'], string> = {
           CRIADO: 'Aberto',
@@ -771,6 +824,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         };
       })
     );
+
+    // Sync assigned technician status
+    setTechnicians((prev) =>
+      prev.map((t) => {
+        const isAssigned = t.currentCallId === callId || (affectedCall && t.id === affectedCall.technicianId);
+        if (!isAssigned) return t;
+
+        if (status === 'A_CAMINHO') {
+          return { ...t, status: 'A_CAMINHO', currentCallId: callId };
+        }
+        if (status === 'EM_ATENDIMENTO') {
+          return { ...t, status: 'EM_ATENDIMENTO', currentCallId: callId };
+        }
+        if (status === 'CONCLUIDO' || status === 'CANCELADO') {
+          return {
+            ...t,
+            status: 'DISPONIVEL',
+            currentCallId: undefined,
+            activeCallElapsedMinutes: undefined,
+            overdueAlert: false,
+            completedCallsMonth: status === 'CONCLUIDO' ? (t.completedCallsMonth || 0) + 1 : t.completedCallsMonth
+          };
+        }
+        return t;
+      })
+    );
+
+    // If completed, liberate the equipment back to OPERACIONAL
+    if (status === 'CONCLUIDO') {
+      setEquipments((prev) =>
+        prev.map((e) =>
+          affectedCall && e.id === affectedCall.equipmentId
+            ? { ...e, status: 'OPERACIONAL', lastMaintenanceDate: new Date().toISOString().split('T')[0] }
+            : e
+        )
+      );
+    }
 
     addToast({
       type: 'info',
@@ -813,10 +903,57 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })
     );
 
+    // Free previously assigned technician and set new technician
+    setTechnicians((prev) =>
+      prev.map((t) => {
+        if (t.currentCallId === callId && t.id !== newTechnicianId) {
+          return { ...t, status: 'DISPONIVEL', currentCallId: undefined, overdueAlert: false };
+        }
+        if (t.id === newTechnicianId) {
+          return { ...t, status: 'A_CAMINHO', currentCallId: callId };
+        }
+        return t;
+      })
+    );
+
     addToast({
       type: 'success',
       title: 'Técnico Reatribuído',
       message: `Chamado atribuído a ${tech.name}. Decisão registrada no histórico de aprendizado da IA.`
+    });
+  };
+
+  const resetToCleanState = () => {
+    setCalls([]);
+    setPartRequests([]);
+    setTechActivityLogs([]);
+    setAlerts(INITIAL_ALERTS);
+    setTechnicians(INITIAL_TECHNICIANS.map(t => ({
+      ...t,
+      status: 'DISPONIVEL',
+      currentCallId: undefined,
+      activeCallElapsedMinutes: undefined,
+      overdueAlert: false
+    })));
+    setEquipments(INITIAL_EQUIPMENTS.map(e => ({
+      ...e,
+      status: 'OPERACIONAL'
+    })));
+    setSelectedCallId(null);
+    setSelectedEquipmentId(null);
+
+    // Remove from localStorage
+    localStorage.removeItem(STORAGE_PREFIX + 'calls');
+    localStorage.removeItem(STORAGE_PREFIX + 'part_requests');
+    localStorage.removeItem(STORAGE_PREFIX + 'tech_logs');
+    localStorage.removeItem(STORAGE_PREFIX + 'alerts');
+    localStorage.removeItem(STORAGE_PREFIX + 'technicians');
+    localStorage.removeItem(STORAGE_PREFIX + 'equipments');
+
+    addToast({
+      type: 'success',
+      title: 'Ambiente Limpo para a Banca',
+      message: 'Todos os chamados foram zerados e os técnicos estão disponíveis. Pronto para criar novos fluxos!'
     });
   };
 
@@ -1360,7 +1497,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         fixTechnicianToAddress,
         unfixTechnicianFromAddress,
         theme,
-        setTheme
+        setTheme,
+        resetToCleanState
       }}
     >
       {children}

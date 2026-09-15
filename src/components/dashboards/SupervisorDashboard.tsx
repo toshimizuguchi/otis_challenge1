@@ -162,103 +162,126 @@ export const SupervisorDashboard: React.FC = () => {
         {/* Prescription Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           
-          {/* Recommendation 1: Technician Overdue */}
-          <div className="p-4 rounded-xl bg-slate-950/80 border border-rose-500/30 space-y-3 relative overflow-hidden">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 uppercase">
-                  Alerta Operacional
-                </span>
-                <span className="text-xs font-bold text-slate-200">João Pedro Santos</span>
+          {/* Card 1: Live Call Alert or Readiness Status */}
+          {activeCalls.length > 0 ? (
+            <div className="p-4 rounded-xl bg-slate-950/80 border border-cyan-500/40 space-y-3 relative overflow-hidden">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 uppercase">
+                    {activeCalls[0].priority === 'CRITICO' ? 'Ocorrência Crítica' : 'Ocorrência em Andamento'}
+                  </span>
+                  <span className="text-xs font-bold text-slate-200">{activeCalls[0].callNumber}</span>
+                </div>
+                <span className="text-xs font-mono text-cyan-400 font-bold">SLA {activeCalls[0].slaMaxHours}h</span>
               </div>
-              <span className="text-xs font-mono text-rose-400 font-bold">47 min no local</span>
-            </div>
 
-            <div className="space-y-1 text-xs">
-              <div className="text-slate-300">
-                <span className="text-slate-400 font-semibold">Problema:</span> Tempo de atendimento excedendo a média histórica.
+              <div className="space-y-1 text-xs">
+                <div className="text-slate-300">
+                  <span className="text-slate-400 font-semibold">Equipamento:</span> {activeCalls[0].equipmentTag} ({activeCalls[0].buildingName})
+                </div>
+                <div className="text-slate-300">
+                  <span className="text-slate-400 font-semibold">Problema:</span> {activeCalls[0].problemDescription}
+                </div>
+                <div className="text-cyan-300 font-medium">
+                  <span className="text-slate-400 font-semibold">Técnico em Ação:</span> {activeCalls[0].technicianName || 'Em triagem'}
+                </div>
               </div>
-              <div className="text-slate-300">
-                <span className="text-slate-400 font-semibold">Evidência:</span> Tempo atual: 47 min | Média histórica modelo Gen2 Comfort: 22 min.
-              </div>
-              <div className="text-cyan-300 font-medium">
-                <span className="text-slate-400 font-semibold">Recomendação da IA:</span> Verificar necessidade de suporte técnico ou envio do Kit Sapata AT120. Carlos Mendonça está livre a 7.2 km.
+
+              <div className="flex items-center gap-2 pt-2 border-t border-slate-800/80">
+                <button
+                  onClick={() => {
+                    setSelectedCallId(activeCalls[0].id);
+                    setActiveView('calls');
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/40 text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  Ver Dossiê do Chamado
+                </button>
+                <button
+                  onClick={() => handleOpenOverride(activeCalls[0].id)}
+                  className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  Reatribuir / Apoio
+                </button>
               </div>
             </div>
+          ) : (
+            <div className="p-4 rounded-xl bg-slate-950/80 border border-emerald-500/30 space-y-3 relative overflow-hidden">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 uppercase">
+                    Prontidão Operacional
+                  </span>
+                  <span className="text-xs font-bold text-slate-200">Polo Campinas & RMC</span>
+                </div>
+                <span className="text-xs font-mono text-emerald-400 font-bold">100% Livre</span>
+              </div>
 
-            <div className="flex items-center gap-2 pt-2 border-t border-slate-800/80">
-              <button
-                onClick={() => {
-                  addToast({
-                    type: 'info',
-                    title: 'Contato com Técnico',
-                    message: 'Mensagem de suporte e telemetria enviada para João Pedro no celular (19) 98822-1010.'
-                  });
-                }}
-                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors cursor-pointer"
-              >
-                Entrar em Contato
-              </button>
-              <button
-                onClick={() => handleOpenOverride('call-1001')}
-                className="px-3 py-1.5 rounded-lg bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/40 text-xs font-semibold transition-colors cursor-pointer"
-              >
-                Reatribuir / Apoio
-              </button>
-              <button
-                onClick={() => {
-                  setSelectedCallId('call-1001');
-                  setActiveView('calls');
-                }}
-                className="px-2 py-1.5 text-xs text-slate-400 hover:text-white"
-              >
-                Ver Chamado
-              </button>
+              <div className="space-y-1 text-xs">
+                <div className="text-slate-300">
+                  <span className="text-slate-400 font-semibold">Situação:</span> Todos os técnicos disponíveis e viaturas prontas para atendimento.
+                </div>
+                <div className="text-slate-300">
+                  <span className="text-slate-400 font-semibold">Copilot AI:</span> Matriz geoespacial e telemetria ativas aguardando acionamentos.
+                </div>
+                <div className="text-emerald-300 font-medium">
+                  <span className="text-slate-400 font-semibold">Recomendação:</span> Pronto para registrar novos chamados na banca final.
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pt-2 border-t border-slate-800/80">
+                <button
+                  onClick={() => setActiveView('calls')}
+                  className="px-3 py-1.5 rounded-lg bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/40 text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  + Abrir Novo Chamado com IA
+                </button>
+                <button
+                  onClick={() => setActiveView('maps')}
+                  className="px-2 py-1.5 text-xs text-slate-400 hover:text-white"
+                >
+                  Ver Mapa de Técnicos
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Recommendation 2: Smart Geo Batching */}
+          {/* Recommendation 2: Smart Geo Batching & Route Optimization */}
           <div className="p-4 rounded-xl bg-slate-950/80 border border-cyan-500/30 space-y-3 relative overflow-hidden">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-2">
                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 uppercase">
-                  Otimização de Rota
+                  Otimização de Rotas
                 </span>
-                <span className="text-xs font-bold text-slate-200">Viracopos & Cambuí</span>
+                <span className="text-xs font-bold text-slate-200">Campinas & Corredores RMC</span>
               </div>
-              <span className="text-xs font-mono text-emerald-400 font-bold">-18 km rodados</span>
+              <span className="text-xs font-mono text-emerald-400 font-bold">IA Ativa</span>
             </div>
 
             <div className="space-y-1 text-xs">
               <div className="text-slate-300">
-                <span className="text-slate-400 font-semibold">Problema:</span> 2 chamados abertos no mesmo corredor viário (Santos Dumont).
+                <span className="text-slate-400 font-semibold">Motor:</span> Cálculo de ETA dinâmico com base em tráfego e distância euclidiana/viária.
               </div>
               <div className="text-slate-300">
-                <span className="text-slate-400 font-semibold">Evidência:</span> Lucas Ferreira já está em deslocamento com peças compatíveis para ambos.
+                <span className="text-slate-400 font-semibold">Especialidades:</span> Despacho inteligente direciona técnicos capacitados por marca e componente.
               </div>
               <div className="text-cyan-300 font-medium">
-                <span className="text-slate-400 font-semibold">Recomendação da IA:</span> Agrupar a ordem de serviço preventiva com o chamado de Viracopos para o mesmo técnico.
+                <span className="text-slate-400 font-semibold">Status:</span> 9 técnicos monitorados via GPS com atualização contínua.
               </div>
             </div>
 
             <div className="flex items-center gap-2 pt-2 border-t border-slate-800/80">
               <button
-                onClick={() => {
-                  addToast({
-                    type: 'success',
-                    title: 'Agrupamento Concluído',
-                    message: 'Ordens de serviço agrupadas na rota de Lucas Ferreira.'
-                  });
-                }}
+                onClick={() => setActiveView('maps')}
                 className="px-3 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 text-xs font-semibold transition-colors cursor-pointer"
               >
-                Aprovar Agrupamento
+                Abrir Mapa Operacional
               </button>
               <button
-                onClick={() => setActiveView('maps')}
+                onClick={() => setActiveView('predictive')}
                 className="px-3 py-1.5 text-xs text-slate-400 hover:text-white"
               >
-                Ver no Mapa
+                Ver Análise Preditiva
               </button>
             </div>
           </div>
@@ -686,68 +709,89 @@ export const SupervisorDashboard: React.FC = () => {
           </div>
 
           <div className="space-y-3">
-            {activeCalls.map((call) => (
-              <div
-                key={call.id}
-                className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-cyan-500/40 transition-all space-y-3"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="space-y-0.5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono font-bold text-cyan-300">{call.callNumber}</span>
-                      <PriorityBadge priority={call.priority} />
-                      <StatusPill status={call.status} />
-                    </div>
-                    <div className="text-xs font-bold text-slate-100 mt-1">
-                      {call.equipmentTag} • {call.customerName}
-                    </div>
-                    <div className="text-[11px] text-slate-400">
-                      {call.buildingName} • {call.city}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[10px] font-mono text-slate-400">SLA: {call.slaMaxHours}h</span>
-                  </div>
+            {activeCalls.length === 0 ? (
+              <div className="p-8 text-center bg-slate-950/60 rounded-xl border border-dashed border-slate-800 space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center mx-auto">
+                  <CheckCircle2 className="w-6 h-6 text-emerald-400" />
                 </div>
-
-                <div className="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 text-xs space-y-1">
-                  <div className="text-slate-300">
-                    <span className="text-slate-400 font-semibold">Problema:</span> {call.problemDescription}
-                  </div>
-                  {call.aiRecommendation && (
-                    <div className="text-cyan-300 text-[11px] flex items-center justify-between pt-1 border-t border-slate-800">
-                      <span>IA Sugere: <strong>{call.aiRecommendation.suggestedTechnicianName}</strong> ({call.aiRecommendation.estimatedTimeMin} min)</span>
-                      <span className="font-mono text-slate-400">{call.aiRecommendation.confidence}% conf.</span>
-                    </div>
-                  )}
-                  {call.supervisorOverride?.overridden && (
-                    <div className="text-amber-300 text-[10px] pt-1">
-                      * Decisão do supervisor registrada: {call.supervisorOverride.reason}
-                    </div>
-                  )}
+                <div>
+                  <h4 className="text-sm font-bold text-white">Fila Operacional em Prontidão</h4>
+                  <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1">
+                    Não há chamados pendentes no momento. Todos os técnicos de Campinas & RMC estão disponíveis para despacho.
+                  </p>
                 </div>
-
-                <div className="flex items-center justify-between pt-1">
-                  <div className="text-[11px] text-slate-400">
-                    Técnico Atual: <strong className="text-slate-200">{call.technicianName || 'Não Atribuído'}</strong>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => confirmAIRecommendation(call.id)}
-                      className="px-2.5 py-1 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 text-xs font-medium cursor-pointer"
-                    >
-                      Confirmar IA
-                    </button>
-                    <button
-                      onClick={() => handleOpenOverride(call.id)}
-                      className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium cursor-pointer"
-                    >
-                      Alterar Técnico
-                    </button>
-                  </div>
-                </div>
+                <button
+                  onClick={() => setActiveView('calls')}
+                  className="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs rounded-xl shadow-sm inline-flex items-center gap-2 cursor-pointer transition-all"
+                >
+                  <PhoneCall className="w-4 h-4" />
+                  <span>+ Abrir Chamado na Central</span>
+                </button>
               </div>
-            ))}
+            ) : (
+              activeCalls.map((call) => (
+                <div
+                  key={call.id}
+                  className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-cyan-500/40 transition-all space-y-3"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono font-bold text-cyan-300">{call.callNumber}</span>
+                        <PriorityBadge priority={call.priority} />
+                        <StatusPill status={call.status} />
+                      </div>
+                      <div className="text-xs font-bold text-slate-100 mt-1">
+                        {call.equipmentTag} • {call.customerName}
+                      </div>
+                      <div className="text-[11px] text-slate-400">
+                        {call.buildingName} • {call.city}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] font-mono text-slate-400">SLA: {call.slaMaxHours}h</span>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 text-xs space-y-1">
+                    <div className="text-slate-300">
+                      <span className="text-slate-400 font-semibold">Problema:</span> {call.problemDescription}
+                    </div>
+                    {call.aiRecommendation && (
+                      <div className="text-cyan-300 text-[11px] flex items-center justify-between pt-1 border-t border-slate-800">
+                        <span>IA Sugere: <strong>{call.aiRecommendation.suggestedTechnicianName}</strong> ({call.aiRecommendation.estimatedTimeMin} min)</span>
+                        <span className="font-mono text-slate-400">{call.aiRecommendation.confidence}% conf.</span>
+                      </div>
+                    )}
+                    {call.supervisorOverride?.overridden && (
+                      <div className="text-amber-300 text-[10px] pt-1">
+                        * Decisão do supervisor registrada: {call.supervisorOverride.reason}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1">
+                    <div className="text-[11px] text-slate-400">
+                      Técnico Atual: <strong className="text-slate-200">{call.technicianName || 'Não Atribuído'}</strong>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => confirmAIRecommendation(call.id)}
+                        className="px-2.5 py-1 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 text-xs font-medium cursor-pointer"
+                      >
+                        Confirmar IA
+                      </button>
+                      <button
+                        onClick={() => handleOpenOverride(call.id)}
+                        className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium cursor-pointer"
+                      >
+                        Alterar Técnico
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 

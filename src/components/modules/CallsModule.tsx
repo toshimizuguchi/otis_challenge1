@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { PriorityBadge, StatusPill } from '../common/UIComponents';
 import { CreateCallModal } from '../modals/CreateCallModal';
@@ -27,7 +27,8 @@ import {
   Info,
   Calendar,
   User,
-  Award
+  Award,
+  RotateCcw
 } from 'lucide-react';
 import { 
   checkTechnicianEquipmentFamiliarity 
@@ -43,6 +44,7 @@ export const CallsModule: React.FC = () => {
     setSelectedCityFilter, 
     currentUser,
     addToast,
+    resetToCleanState,
     fixedAddressTechnicians,
     fixTechnicianToAddress,
     unfixTechnicianFromAddress
@@ -63,6 +65,15 @@ export const CallsModule: React.FC = () => {
 
   const [activeDetailCall, setActiveDetailCall] = useState<Call | null>(relevantCalls[0] || calls[0] || null);
   const [mobileActiveView, setMobileActiveView] = useState<'list' | 'detail'>('list');
+
+  // Sync activeDetailCall when calls list changes
+  useEffect(() => {
+    if (!activeDetailCall && relevantCalls.length > 0) {
+      setActiveDetailCall(relevantCalls[0]);
+    } else if (activeDetailCall && !relevantCalls.some(c => c.id === activeDetailCall.id)) {
+      setActiveDetailCall(relevantCalls[0] || null);
+    }
+  }, [relevantCalls, activeDetailCall]);
 
   // Filter logic
   const filteredCalls = relevantCalls.filter(c => {
@@ -94,7 +105,11 @@ export const CallsModule: React.FC = () => {
     if (!activeDetailCall) return;
     updateCallStatus(activeDetailCall.id, newStatus, message);
     setActiveDetailCall(prev => prev ? { ...prev, status: newStatus } : null);
-    addToast('success', 'Status da O.S. Atualizado', `${activeDetailCall.callNumber}: ${newStatus.replace('_', ' ')}`);
+    addToast({
+      type: 'success',
+      title: 'Status da O.S. Atualizado',
+      message: `${activeDetailCall.callNumber}: ${newStatus.replace('_', ' ')}`
+    });
   };
 
   const criticalCallsCount = relevantCalls.filter(c => c.priority === 'CRITICO' || c.hasTrappedPassenger).length;
@@ -182,13 +197,24 @@ export const CallsModule: React.FC = () => {
           </button>
 
           {!isTechnician && (
-            <button
-              onClick={() => setIsCreateModalOpen(true)}
-              className="ml-1 px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center gap-1 shadow-sm shrink-0"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Novo</span>
-            </button>
+            <div className="flex items-center gap-1.5 ml-1 shrink-0">
+              <button
+                onClick={() => setIsCreateModalOpen(true)}
+                className="px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center gap-1 shadow-sm cursor-pointer transition-all"
+                title="Criar novo chamado inteligente"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Novo Chamado</span>
+              </button>
+              <button
+                onClick={resetToCleanState}
+                className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-rose-950/40 text-slate-400 hover:text-rose-300 border border-slate-700/80 hover:border-rose-500/40 text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer"
+                title="Zerar todos os chamados e deixar o ambiente limpo para apresentação"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span className="hidden sm:inline">Limpar Base</span>
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -349,9 +375,22 @@ export const CallsModule: React.FC = () => {
           })}
 
           {filteredCalls.length === 0 && (
-            <div className="p-6 text-center text-slate-400 text-xs space-y-2">
-              <Info className="w-5 h-5 text-slate-500 mx-auto" />
-              <p>Nenhuma ordem de serviço encontrada.</p>
+            <div className="p-8 text-center bg-slate-950/50 rounded-xl border border-dashed border-slate-800 text-slate-400 text-xs space-y-3">
+              <div className="w-10 h-10 rounded-xl bg-slate-800/80 border border-slate-700 text-cyan-400 flex items-center justify-center mx-auto">
+                <PhoneCall className="w-5 h-5 text-cyan-400" />
+              </div>
+              <div>
+                <p className="font-bold text-slate-200 text-xs">Nenhum chamado listado</p>
+                <p className="text-[11px] text-slate-500 mt-0.5">Clique em "+ Novo" para simular uma ocorrência real.</p>
+              </div>
+              {!isTechnician && (
+                <button
+                  onClick={() => setIsCreateModalOpen(true)}
+                  className="px-3 py-1.5 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-xs font-bold rounded-lg transition-all cursor-pointer"
+                >
+                  + Abrir Chamado
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -520,7 +559,58 @@ export const CallsModule: React.FC = () => {
             </div>
 
           </div>
-        ) : null}
+        ) : (
+          <div className="lg:col-span-7 bg-slate-900/90 border border-slate-800 rounded-2xl p-8 sm:p-12 shadow-sm text-center flex flex-col items-center justify-center space-y-5">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-indigo-500/20 border border-cyan-500/30 text-cyan-400 flex items-center justify-center shadow-lg shadow-cyan-500/10">
+              <Sparkles className="w-8 h-8 animate-pulse" />
+            </div>
+
+            <div className="space-y-2 max-w-md">
+              <span className="px-3 py-1 rounded-full text-xs font-bold uppercase bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+                Central de Ocorrências • Pronta para a Banca
+              </span>
+              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                Nenhum chamado aberto no momento
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                O ambiente está limpo para você demonstrar o fluxo completo para a banca avaliadora: abertura do chamado, triagem e diagnóstico por IA, despacho do técnico mais próximo e resolução em campo.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+              <button
+                onClick={() => setIsCreateModalOpen(true)}
+                className="px-6 py-3 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-sm rounded-xl shadow-lg shadow-cyan-500/20 flex items-center gap-2 cursor-pointer transition-all active:scale-95"
+              >
+                <Plus className="w-4 h-4" />
+                <span>+ Abrir Novo Chamado com IA</span>
+              </button>
+
+              <button
+                onClick={resetToCleanState}
+                className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-medium text-xs rounded-xl border border-slate-700 transition-all cursor-pointer"
+                title="Zera todos os chamados e limpa o ambiente"
+              >
+                Limpar Dados da Apresentação
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-lg pt-6 border-t border-slate-800/80 text-left text-xs">
+              <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+                <span className="text-[10px] text-cyan-400 font-bold block">1. TRIAGEM</span>
+                <span className="text-slate-300 text-[11px] mt-0.5 block">IA classifica gravidade (0-5) e SLA de atendimento.</span>
+              </div>
+              <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+                <span className="text-[10px] text-indigo-400 font-bold block">2. DESPACHO</span>
+                <span className="text-slate-300 text-[11px] mt-0.5 block">Calcula tráfego, distância e especialidade.</span>
+              </div>
+              <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+                <span className="text-[10px] text-emerald-400 font-bold block">3. RESOLUÇÃO</span>
+                <span className="text-slate-300 text-[11px] mt-0.5 block">Técnico atende, requisita peças e encerra a OS.</span>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
 
