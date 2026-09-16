@@ -218,7 +218,7 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const STORAGE_PREFIX = 'otis_smartflow_v2_';
+const STORAGE_PREFIX = 'otis_smartflow_v3_';
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Authentication State
@@ -250,6 +250,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
+
+  // Clean legacy stored data to guarantee 100% clean state across updates
+  useEffect(() => {
+    try {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith('otis_smartflow_v1_') || key.startsWith('otis_smartflow_v2_'))) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(k => localStorage.removeItem(k));
+    } catch {
+      // ignore
+    }
+  }, []);
 
   // Entities with Local Storage support
   const [customers, setCustomers] = useState<Customer[]>(() => {

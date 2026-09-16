@@ -197,15 +197,15 @@ export const INITIAL_EQUIPMENTS: Equipment[] = [
     assignedResidentTechnicianName: 'Carlos Mendonça',
     contractId: 'ctr-101',
     installationYear: 2023,
-    status: 'EM_RISCO',
+    status: 'OPERACIONAL',
     machineType: 'Gearless ReGen',
     driveType: 'Regen Drive VVVF',
     hasRegenerativeDrive: true,
     controlType: 'Compass 360 Destination Dispatch',
     cyclesCount: 412900,
-    predictiveRiskScore: 78,
-    riskLevel: 'ALTO',
-    riskExplanation: 'O equipamento apresenta comportamento análogo a outros elevadores Gen2 Comfort que registraram surto de falhas no Operador de Portas AT120 aos ~3 anos de operação contínua com alta ciclagem.',
+    predictiveRiskScore: 18,
+    riskLevel: 'BAIXO',
+    riskExplanation: 'Equipamento operando normalmente dentro dos parâmetros de telemetria.',
     lastMaintenanceDate: '2026-07-15',
     nextScheduledMaintenance: '2026-08-30',
     doorCycles: 384000,
@@ -255,15 +255,15 @@ export const INITIAL_EQUIPMENTS: Equipment[] = [
     preventiveTechnicianName: 'Marcos Vinícius Costa',
     contractId: 'ctr-104',
     installationYear: 2023,
-    status: 'EM_RISCO',
+    status: 'OPERACIONAL',
     machineType: 'Gearless ReGen',
     driveType: 'Regen Drive VVVF',
     hasRegenerativeDrive: true,
     controlType: 'Otis MCS 220',
     cyclesCount: 395000,
-    predictiveRiskScore: 74,
-    riskLevel: 'ALTO',
-    riskExplanation: 'Equipamento aproximando-se da curva crítica de 33 meses de uso com desgaste acelerado na sapata de guia e operador de porta.',
+    predictiveRiskScore: 15,
+    riskLevel: 'BAIXO',
+    riskExplanation: 'Equipamento operando normalmente dentro dos parâmetros de telemetria.',
     lastMaintenanceDate: '2026-08-02',
     nextScheduledMaintenance: '2026-09-02',
     doorCycles: 390000,
@@ -1456,53 +1456,7 @@ export const INITIAL_TRAINING_COURSES: TrainingCourse[] = [
   }
 ];
 
-export const INITIAL_ALERTS: SystemAlert[] = [
-  {
-    id: 'alt-03',
-    category: 'PREDITIVO',
-    severity: 'ALTA',
-    title: 'Padrão de Risco Identificado no Sistema de Portas (Campinas & SBC)',
-    timestamp: '2026-08-28T10:00:00',
-    problem: 'O equipamento ELV-CPS-01, localizado em Campinas, apresenta comportamento análogo a outros equipamentos do mesmo modelo (Gen2 Comfort) que tiveram surto de falhas após ~3 anos de operação contínua.',
-    evidence: '17 equipamentos do modelo analisados no estado de SP; 11 apresentaram padrão de desgaste no operador de porta aos 350 mil ciclos.',
-    recommendation: 'Realizar inspeção preventiva e substituição proativa do kit de sapatas e roletes AT120.',
-    targetEntityId: 'eq-101',
-    targetEntityType: 'EQUIPMENT',
-    actionLabel: 'Abrir Ordem Preventiva',
-    actionType: 'VIEW_EQUIPMENT',
-    read: false
-  },
-  {
-    id: 'alt-04',
-    category: 'FINANCEIRO',
-    severity: 'ALTA',
-    title: 'Margem do Contrato Abaixo do Limiar - Hospital Brasil (SBC)',
-    timestamp: '2026-08-28T09:30:00',
-    problem: 'Contrato CTR-OTIS-2024-SBC01 apresentou redução de margem de 26% para 12.9% no trimestre.',
-    evidence: 'Causa raiz: Aumento de 58% em chamados corretivos de emergência e tempo excedente de deslocamento dos técnicos no trânsito do ABC.',
-    recommendation: 'Reestruturar rotas de técnicos com base na IA e antecipar plano de manutenção preditiva para estancar chamados emergenciais.',
-    targetEntityId: 'ctr-104',
-    targetEntityType: 'CONTRACT',
-    actionLabel: 'Analisar Contrato',
-    actionType: 'ANALYZE_CONTRACT',
-    read: false
-  },
-  {
-    id: 'alt-05',
-    category: 'PECA',
-    severity: 'MEDIA',
-    title: 'Consumo de Peça Acima do Normal - Kit Roletes AT120',
-    timestamp: '2026-08-27T16:00:00',
-    problem: 'Consumo do componente OTIS-AT120-SK subiu 44% acima da média histórica nos últimos 60 dias.',
-    evidence: '318 kits substituídos no ano contra estimativa de 220 unidades para a frota ativa.',
-    recommendation: 'Integrar substituição na Campanha Preventiva Nacional e notificar engenharia de confiabilidade de produto.',
-    targetEntityId: 'part-01',
-    targetEntityType: 'EQUIPMENT',
-    actionLabel: 'Ver Estoque & Peça',
-    actionType: 'VIEW_EQUIPMENT',
-    read: true
-  }
-];
+export const INITIAL_ALERTS: SystemAlert[] = [];
 
 export const INITIAL_AI_INSIGHTS: AIInsight[] = [
   {
