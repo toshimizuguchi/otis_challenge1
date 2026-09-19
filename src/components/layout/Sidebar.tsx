@@ -219,8 +219,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
           {
             title: 'Controladoria & Finanças',
             items: [
-              { id: 'dashboard', label: 'Painel Financeiro', icon: LayoutDashboard },
-              { id: 'financial', label: 'Margens & Custos', icon: DollarSign },
+              { id: 'financial', label: 'Painel Financeiro & Margens', icon: LayoutDashboard },
               { id: 'contracts', label: 'Contratos & Faturamento', icon: FileText },
             ]
           },
@@ -357,7 +356,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
 
             <div className="space-y-0.5">
               {section.items.map(item => {
-                const isActive = activeView === item.id;
+                const isActive = activeView === item.id || 
+                  (currentUser.role === 'FINANCEIRO' && item.id === 'financial' && activeView === 'dashboard');
                 const Icon = item.icon;
 
                 return (
