@@ -1,23 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
+import { EmptyState } from '../common/EmptyState';
 import { 
   Globe, 
   MapPin, 
-  TrendingUp, 
   DollarSign, 
   Clock, 
-  AlertTriangle, 
   CheckCircle2, 
   Download, 
-  Filter, 
-  ArrowUpRight, 
   Building2, 
-  ShieldAlert, 
-  BrainCircuit, 
   ChevronRight,
-  Flame,
-  Award,
-  Layers
+  Award
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -26,33 +19,148 @@ import {
   YAxis, 
   CartesianGrid, 
   Tooltip, 
-  ResponsiveContainer, 
-  Legend, 
-  Cell 
+  ResponsiveContainer
 } from 'recharts';
-import { REGIONAL_COMPARISON_DATA, LATAM_REGIONS_DATA } from '../../data/mockData';
 
 export const RegionalPerformanceModule: React.FC = () => {
-  const { setSelectedCityFilter, setActiveView } = useApp();
+  const { equipments, calls, contracts, setSelectedCityFilter, setActiveView } = useApp();
   const [selectedMacroRegion, setSelectedMacroRegion] = useState<string>('TODAS');
   const [selectedSort, setSelectedSort] = useState<'SLA' | 'MARGEM' | 'EQUIPAMENTOS' | 'AGILIDADE'>('SLA');
   const [showExportToast, setShowExportToast] = useState<boolean>(false);
 
+  // Group real system equipments, calls and contracts by City / Territory
+  const computedRegionalList = useMemo(() => {
+    const cityMap: Record<string, {
+      city: string;
+      state: string;
+      totalEquipments: number;
+      monthlyCalls: number;
+      doorFailuresRate: number;
+      avgTA: number;
+      avgTB: number;
+      slaRate: number;
+      marginRate: number;
+      macroRegion: string;
+      totalCycleTime: number;
+      failureRate: number;
+    }> = {};
+
+    equipments.forEach(eq => {
+      const city = eq.city || 'Desconhecida';
+      const state = eq.state || 'SP';
+      if (!cityMap[city]) {
+        let macro = 'Sudeste';
+        if (state === 'PR' || state === 'SC' || state === 'RS') {
+          macro = 'Sul';
+        } else if (state === 'DF' || state === 'GO' || state === 'BA' || state === 'PE') {
+          macro = 'Centro-Oeste/Nordeste';
+        }
+
+        cityMap[city] = {
+          city,
+          state,
+          totalEquipments: 0,
+          monthlyCalls: 0,
+          doorFailuresRate: 0,
+          avgTA: 0,
+          avgTB: 0,
+          slaRate: 100,
+          marginRate: 0,
+          macroRegion: macro,
+          totalCycleTime: 0,
+          failureRate: 0
+        };
+      }
+      cityMap[city].totalEquipments += 1;
+    });
+
+    calls.forEach(call => {
+      const city = call.city || 'Desconhecida';
+      if (!cityMap[city]) {
+        cityMap[city] = {
+          city,
+          state: 'SP',
+          totalEquipments: 0,
+          monthlyCalls: 0,
+          doorFailuresRate: 0,
+          avgTA: 0,
+          avgTB: 0,
+          slaRate: 100,
+          marginRate: 0,
+          macroRegion: 'Sudeste',
+          totalCycleTime: 0,
+          failureRate: 0
+        };
+      }
+      cityMap[city].monthlyCalls += 1;
+    });
+
+    // Calculate metrics for each active city
+    Object.values(cityMap).forEach(item => {
+      const cityCalls = calls.filter(c => c.city === item.city);
+      if (cityCalls.length > 0) {
+        const doorCalls = cityCalls.filter(c => 
+          (c.component || '').toLowerCase().includes('porta') || 
+          (c.problemDescription || '').toLowerCase().includes('porta')
+        ).length;
+        item.doorFailuresRate = Math.round((doorCalls / cityCalls.length) * 100);
+
+        const withinSLA = cityCalls.filter(c => !c.slaBreached).length;
+        item.slaRate = parseFloat(((withinSLA / cityCalls.length) * 100).toFixed(1));
+
+        // Average response TA and solution TB
+        const completedWithTimes = cityCalls.filter(c => c.responseTimeMinutes !== undefined);
+        if (completedWithTimes.length > 0) {
+          const sumTA = completedWithTimes.reduce((acc, c) => acc + (c.responseTimeMinutes || 0), 0);
+          item.avgTA = parseFloat((sumTA / completedWithTimes.length).toFixed(1));
+        } else {
+          item.avgTA = 20; // default estimated benchmark if no time recorded
+        }
+
+        const completedWithSolution = cityCalls.filter(c => c.totalDurationMinutes !== undefined);
+        if (completedWithSolution.length > 0) {
+          const sumTB = completedWithSolution.reduce((acc, c) => acc + (c.totalDurationMinutes || 0), 0);
+          item.avgTB = parseFloat((sumTB / completedWithSolution.length).toFixed(1));
+        } else {
+          item.avgTB = 30;
+        }
+
+        item.totalCycleTime = item.avgTA + item.avgTB;
+
+        if (item.totalEquipments > 0) {
+          item.failureRate = parseFloat((cityCalls.length / item.totalEquipments).toFixed(1));
+        }
+      }
+
+      // Contracts in this city
+      const cityContracts = contracts.filter(c => {
+        const hasEqInCity = equipments.some(e => e.contractId === c.id && e.city === item.city);
+        return hasEqInCity;
+      });
+
+      if (cityContracts.length > 0) {
+        const totalVal = cityContracts.reduce((acc, c) => acc + (c.contractValue || 0), 0);
+        if (totalVal > 0) {
+          const weighted = cityContracts.reduce((acc, c) => acc + ((c.contractValue || 0) * (c.marginPercent || 0)), 0);
+          item.marginRate = parseFloat((weighted / totalVal).toFixed(1));
+        } else {
+          item.marginRate = parseFloat((cityContracts.reduce((acc, c) => acc + (c.marginPercent || 0), 0) / cityContracts.length).toFixed(1));
+        }
+      } else {
+        // Global average contract margin as fallback
+        const globalMargin = contracts.length > 0 
+          ? contracts.reduce((acc, c) => acc + (c.marginPercent || 0), 0) / contracts.length
+          : 0;
+        item.marginRate = parseFloat(globalMargin.toFixed(1));
+      }
+    });
+
+    return Object.values(cityMap);
+  }, [equipments, calls, contracts]);
+
   // Filtered and enriched list of regions
   const regionalData = useMemo(() => {
-    let list = REGIONAL_COMPARISON_DATA.map(item => {
-      let macro = 'Sudeste';
-      if (item.state === 'PR' || item.state === 'SC' || item.state === 'RS') {
-        macro = 'Sul';
-      } else if (item.state === 'DF' || item.state === 'GO' || item.state === 'BA' || item.state === 'PE') {
-        macro = 'Centro-Oeste/Nordeste';
-      }
-      return {
-        ...item,
-        macroRegion: macro,
-        totalCycleTime: item.avgTA + item.avgTB
-      };
-    });
+    let list = [...computedRegionalList];
 
     if (selectedMacroRegion !== 'TODAS' && selectedMacroRegion !== 'LATAM') {
       list = list.filter(item => item.macroRegion === selectedMacroRegion);
@@ -66,13 +174,19 @@ export const RegionalPerformanceModule: React.FC = () => {
       if (selectedSort === 'AGILIDADE') return a.totalCycleTime - b.totalCycleTime;
       return 0;
     });
-  }, [selectedMacroRegion, selectedSort]);
+  }, [computedRegionalList, selectedMacroRegion, selectedSort]);
 
-  // Consolidations for Executive Cards
-  const totalEquipments = REGIONAL_COMPARISON_DATA.reduce((acc, curr) => acc + curr.totalEquipments, 0);
-  const avgSLA = (REGIONAL_COMPARISON_DATA.reduce((acc, curr) => acc + curr.slaRate, 0) / REGIONAL_COMPARISON_DATA.length).toFixed(1);
-  const avgMargin = (REGIONAL_COMPARISON_DATA.reduce((acc, curr) => acc + curr.marginRate, 0) / REGIONAL_COMPARISON_DATA.length).toFixed(1);
-  const avgTA = (REGIONAL_COMPARISON_DATA.reduce((acc, curr) => acc + curr.avgTA, 0) / REGIONAL_COMPARISON_DATA.length).toFixed(1);
+  // Consolidations for Executive Cards based on real data
+  const totalEquipments = computedRegionalList.reduce((acc, curr) => acc + curr.totalEquipments, 0);
+  const avgSLA = computedRegionalList.length > 0
+    ? (computedRegionalList.reduce((acc, curr) => acc + curr.slaRate, 0) / computedRegionalList.length).toFixed(1)
+    : '100.0';
+  const avgMargin = computedRegionalList.length > 0
+    ? (computedRegionalList.reduce((acc, curr) => acc + curr.marginRate, 0) / computedRegionalList.length).toFixed(1)
+    : '0.0';
+  const avgTA = computedRegionalList.length > 0
+    ? (computedRegionalList.reduce((acc, curr) => acc + curr.avgTA, 0) / computedRegionalList.length).toFixed(1)
+    : '0.0';
 
   const handleExport = () => {
     setShowExportToast(true);
@@ -89,7 +203,7 @@ export const RegionalPerformanceModule: React.FC = () => {
             <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
               Presidência • Governança Territorial
             </span>
-            <span className="text-xs text-slate-400 font-mono">Brasil & Expansão LATAM</span>
+            <span className="text-xs text-slate-400 font-mono">Polos Operacionais Reais</span>
           </div>
           <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight mt-1">
             Desempenho Regional & Operação por Polos
@@ -121,7 +235,7 @@ export const RegionalPerformanceModule: React.FC = () => {
       )}
 
       {/* Macro Executive KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 shadow-sm">
           <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
             <span>SLA Médio Consolidado</span>
@@ -129,9 +243,8 @@ export const RegionalPerformanceModule: React.FC = () => {
           </div>
           <div className="text-2xl font-bold font-mono text-white flex items-baseline gap-2">
             {avgSLA}%
-            <span className="text-[11px] font-semibold text-emerald-400 font-sans">+0.8% vs Meta</span>
           </div>
-          <p className="text-[11px] text-slate-400 mt-1">Meta corporativa anual: 97.0%</p>
+          <p className="text-[11px] text-slate-400 mt-1">Cumprimento médio dos chamados</p>
         </div>
 
         <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 shadow-sm">
@@ -141,9 +254,8 @@ export const RegionalPerformanceModule: React.FC = () => {
           </div>
           <div className="text-2xl font-bold font-mono text-emerald-400 flex items-baseline gap-2">
             {avgMargin}%
-            <span className="text-[11px] font-semibold text-emerald-400 font-sans">+2.1% no tri</span>
           </div>
-          <p className="text-[11px] text-slate-400 mt-1">Contratos All-Inclusive com IoT</p>
+          <p className="text-[11px] text-slate-400 mt-1">Margem média real dos contratos</p>
         </div>
 
         <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 shadow-sm">
@@ -152,9 +264,9 @@ export const RegionalPerformanceModule: React.FC = () => {
             <Building2 className="w-4 h-4 text-indigo-400" />
           </div>
           <div className="text-2xl font-bold font-mono text-white">
-            {totalEquipments.toLocaleString('pt-BR')}
+            {totalEquipments.toLocaleString('pt-BR')} unid.
           </div>
-          <p className="text-[11px] text-slate-400 mt-1">Elevadores, escadas e esteiras</p>
+          <p className="text-[11px] text-slate-400 mt-1">Equipamentos ativos no sistema</p>
         </div>
 
         <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 shadow-sm">
@@ -164,9 +276,8 @@ export const RegionalPerformanceModule: React.FC = () => {
           </div>
           <div className="text-2xl font-bold font-mono text-amber-300 flex items-baseline gap-2">
             {avgTA} min
-            <span className="text-[11px] font-semibold text-emerald-400 font-sans">-3.4 min</span>
           </div>
-          <p className="text-[11px] text-slate-400 mt-1">Despacho otimizado com roteirização</p>
+          <p className="text-[11px] text-slate-400 mt-1">Média real nos chamados atendidos</p>
         </div>
       </div>
 
@@ -175,9 +286,9 @@ export const RegionalPerformanceModule: React.FC = () => {
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
           {[
             { id: 'TODAS', label: 'Todas as Praças' },
-            { id: 'Sudeste', label: 'Sudeste (SP, RJ, MG)' },
-            { id: 'Sul', label: 'Sul (PR, SC, RS)' },
-            { id: 'LATAM', label: 'Mercosul & LATAM' }
+            { id: 'Sudeste', label: 'Sudeste' },
+            { id: 'Sul', label: 'Sul' },
+            { id: 'LATAM', label: 'Expansão LATAM' }
           ].map(tab => (
             <button
               key={tab.id}
@@ -210,61 +321,26 @@ export const RegionalPerformanceModule: React.FC = () => {
 
       {/* Main Regional Grid / LATAM Comparison */}
       {selectedMacroRegion === 'LATAM' ? (
-        <div className="space-y-4">
-          <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800">
-            <h3 className="text-sm font-bold text-slate-100 mb-1">Presença Internacional & Filiais LATAM</h3>
-            <p className="text-xs text-slate-400 mb-4">Métricas consolidadas das operações ativas e planos de expansão no continente.</p>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {LATAM_REGIONS_DATA.map((lat) => (
-                <div 
-                  key={lat.country}
-                  className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-indigo-500/40 transition-all flex flex-col justify-between gap-3"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Globe className="w-4 h-4 text-indigo-400" />
-                      <span className="text-sm font-bold text-slate-100">{lat.country}</span>
-                    </div>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                      Disponibilidade {lat.availability}%
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 text-xs py-1 border-y border-slate-800/80">
-                    <div>
-                      <span className="text-slate-400 block text-[10px]">Equipamentos</span>
-                      <span className="font-mono font-bold text-slate-200">{lat.equipmentsCount}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block text-[10px]">SLA Global</span>
-                      <span className="font-mono font-bold text-emerald-400">{lat.slaRate}%</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block text-[10px]">Margem Operacional</span>
-                      <span className="font-mono font-bold text-slate-200">{lat.marginRate}%</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block text-[10px]">Chamados Ativos</span>
-                      <span className="font-mono font-bold text-cyan-400">{lat.activeCalls}</span>
-                    </div>
-                  </div>
-
-                  <div className="text-[11px] text-slate-400 flex items-center justify-between pt-1">
-                    <span>Equipamentos Críticos:</span>
-                    <span className="font-mono font-bold text-rose-400">{lat.criticalEquipments} unid.</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        <EmptyState
+          icon={<Globe className="w-8 h-8 text-cyan-400" />}
+          title="Sem equipamentos cadastrados nesta praça internacional"
+          description="A operação do sistema está atualmente ativa exclusivamente nos polos e filiais do Brasil cadastrados no banco de dados."
+          actionText="Ver Praças Brasileiras"
+          onAction={() => setSelectedMacroRegion('TODAS')}
+        />
+      ) : regionalData.length === 0 ? (
+        <EmptyState
+          icon={<MapPin className="w-8 h-8 text-slate-400" />}
+          title="Nenhum polo encontrado nesta macrorregião"
+          description="Não há equipamentos cadastrados vinculados a esta seleção geográfica no momento."
+          actionText="Ver Todas as Praças"
+          onAction={() => setSelectedMacroRegion('TODAS')}
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
           {regionalData.map((reg, idx) => {
             const isHighSLA = reg.slaRate >= 98.0;
-            const isMediumSLA = reg.slaRate >= 96.0 && reg.slaRate < 98.0;
-            const slaColor = isHighSLA ? 'text-emerald-400' : isMediumSLA ? 'text-cyan-400' : 'text-amber-400';
+            const isMediumSLA = reg.slaRate >= 95.0 && reg.slaRate < 98.0;
 
             return (
               <div
@@ -285,7 +361,11 @@ export const RegionalPerformanceModule: React.FC = () => {
                       </div>
                     </div>
                     <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded ${
-                      isHighSLA ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' : 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30'
+                      isHighSLA 
+                        ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' 
+                        : isMediumSLA 
+                          ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30'
+                          : 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
                     }`}>
                       SLA {reg.slaRate}%
                     </span>
@@ -298,7 +378,7 @@ export const RegionalPerformanceModule: React.FC = () => {
                       <span className="font-mono font-bold text-slate-200">{reg.totalEquipments} unid.</span>
                     </div>
                     <div className="p-2 rounded-lg bg-slate-950/60 border border-slate-800/60">
-                      <span className="text-[10px] text-slate-400 block">Margem Contratual</span>
+                      <span className="text-[10px] text-slate-400 block">Margem Média</span>
                       <span className="font-mono font-bold text-emerald-400">{reg.marginRate}%</span>
                     </div>
                     <div className="p-2 rounded-lg bg-slate-950/60 border border-slate-800/60">
@@ -315,20 +395,20 @@ export const RegionalPerformanceModule: React.FC = () => {
                   <div className="mt-3 p-2.5 rounded-lg bg-slate-950/80 border border-slate-800/90 text-xs space-y-1">
                     <div className="flex items-center justify-between text-[11px]">
                       <span className="text-slate-400">Chamados de Portas:</span>
-                      <span className={`font-mono font-bold ${reg.doorFailuresRate > 50 ? 'text-amber-400' : 'text-slate-300'}`}>
+                      <span className={`font-mono font-bold ${reg.doorFailuresRate > 40 ? 'text-amber-400' : 'text-slate-300'}`}>
                         {reg.doorFailuresRate}%
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-slate-400">Taxa de Falha Mensal:</span>
-                      <span className="font-mono font-bold text-slate-300">{reg.failureRate}%</span>
+                      <span className="text-slate-400">Taxa Falhas/Equip.:</span>
+                      <span className="font-mono font-bold text-slate-300">{reg.failureRate}</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between">
                   <span className="text-[11px] text-slate-400">
-                    {reg.monthlyCalls} chamados/mês
+                    {reg.monthlyCalls} chamados registrados
                   </span>
                   <button
                     onClick={() => {
@@ -348,48 +428,50 @@ export const RegionalPerformanceModule: React.FC = () => {
       )}
 
       {/* Executive Analytical Chart */}
-      <div className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <h3 className="text-sm font-bold text-slate-100">Comparativo Consolidado de SLA (%) e Margem (%)</h3>
-            <p className="text-xs text-slate-400">Análise de eficiência operacional e rentabilidade líquida por polo</p>
+      {regionalData.length > 0 && (
+        <div className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-sm space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h3 className="text-sm font-bold text-slate-100">Comparativo Real de SLA (%) e Margem (%)</h3>
+              <p className="text-xs text-slate-400">Análise de eficiência operacional e rentabilidade líquida por polo cadastrado</p>
+            </div>
+            <div className="flex items-center gap-4 text-xs">
+              <span className="flex items-center gap-1.5 text-cyan-400">
+                <span className="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
+                SLA (%)
+              </span>
+              <span className="flex items-center gap-1.5 text-emerald-400">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                Margem (%)
+              </span>
+            </div>
           </div>
-          <div className="flex items-center gap-4 text-xs">
-            <span className="flex items-center gap-1.5 text-cyan-400">
-              <span className="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
-              SLA (%)
-            </span>
-            <span className="flex items-center gap-1.5 text-emerald-400">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-              Margem (%)
-            </span>
-          </div>
-        </div>
 
-        <div className="h-64 sm:h-72 w-full pt-2">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart 
-              data={REGIONAL_COMPARISON_DATA} 
-              margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-              <XAxis dataKey="city" stroke="#64748b" tick={{ fontSize: 11 }} />
-              <YAxis domain={[0, 100]} stroke="#64748b" tick={{ fontSize: 11 }} />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#090d16', 
-                  borderColor: '#334155', 
-                  borderRadius: '0.75rem', 
-                  fontSize: '12px', 
-                  color: '#f8fafc' 
-                }} 
-              />
-              <Bar dataKey="slaRate" name="SLA (%)" fill="#06b6d4" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="marginRate" name="Margem (%)" fill="#10b981" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="h-64 sm:h-72 w-full pt-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart 
+                data={regionalData} 
+                margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                <XAxis dataKey="city" stroke="#64748b" tick={{ fontSize: 11 }} />
+                <YAxis domain={[0, 100]} stroke="#64748b" tick={{ fontSize: 11 }} />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: '#090d16', 
+                    borderColor: '#334155', 
+                    borderRadius: '0.75rem', 
+                    fontSize: '12px', 
+                    color: '#f8fafc' 
+                  }} 
+                />
+                <Bar dataKey="slaRate" name="SLA (%)" fill="#06b6d4" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="marginRate" name="Margem (%)" fill="#10b981" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
-      </div>
+      )}
 
     </div>
   );

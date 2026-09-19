@@ -243,12 +243,11 @@ export const FutureIoTModule: React.FC = () => {
   // Seismic Table Filter
   const [seismicSeverityFilter, setSeismicSeverityFilter] = useState<'ALL' | 'P1' | 'P2' | 'P3'>('ALL');
   const [seismicList, setSeismicList] = useState<SeismicRow[]>([
-    { id: 'EQ-CDMX-01', unit: 'Torre Reforma Bank', client: 'Banco Santander México', city: 'Cidade do México (CDMX)', sensorType: 'Acelerômetro Triaxial MEMS P1', lastReading: '0.65 m/s² (Alarme)', severity: 'P1', status: 'PENDENTE', limitAccel: '> 0.50 m/s²' },
-    { id: 'EQ-CDMX-04', unit: 'Torre Mayor Piso 45', client: 'Fibra Uno Corporate', city: 'Cidade do México (CDMX)', sensorType: 'Sensor Sísmico Magnético P1', lastReading: '0.48 m/s² (Pré-alerta)', severity: 'P1', status: 'PENDENTE', limitAccel: '> 0.50 m/s²' },
-    { id: 'EQ-OAX-02', unit: 'Hospital Civil Oaxaca', client: 'Secretaría de Salud MX', city: 'Oaxaca de Juárez (OAX)', sensorType: 'Sensor Sísmico Triaxial Integrado P2', lastReading: '0.38 m/s² (Normal)', severity: 'P2', status: 'EM_RETROFIT', limitAccel: '> 0.40 m/s²' },
-    { id: 'EQ-PUE-07', unit: 'Centro Financiero Angelópolis', client: 'Inmobiliaria Angelópolis', city: 'Puebla (PUE)', sensorType: 'Acelerômetro Piezoelétrico P2', lastReading: '0.22 m/s² (Estável)', severity: 'P2', status: 'HOMOLOGADO', limitAccel: '> 0.40 m/s²' },
-    { id: 'EQ-SP-901', unit: 'Edifício Infinity Tower', client: 'Credit Suisse Real Estate', city: 'São Paulo (SP)', sensorType: 'Vibrometro Triaxial P3 (Vento)', lastReading: '0.08 m/s² (Estático)', severity: 'P3', status: 'HOMOLOGADO', limitAccel: '> 0.25 m/s²' },
-    { id: 'EQ-STS-44', unit: 'Terminal Marítimo Concais', client: 'Autoridade Portuária Santos', city: 'Santos (SP)', sensorType: 'Sensor Inclinômetro Dinâmico P3', lastReading: '0.12 m/s² (Ondulação)', severity: 'P3', status: 'HOMOLOGADO', limitAccel: '> 0.30 m/s²' }
+    { id: 'ELV-CPS-01', unit: 'Torre A - Alpha Social', client: 'Centro Empresarial Iguatemi Campinas', city: 'Campinas (SP)', sensorType: 'Acelerômetro Triaxial MEMS P1', lastReading: '0.42 m/s² (Normal)', severity: 'P2', status: 'HOMOLOGADO', limitAccel: '> 0.50 m/s²' },
+    { id: 'ELV-SBC-04', unit: 'Bloco Cirúrgico 2 Leito', client: 'Hospital e Maternidade Brasil - Rede D’Or', city: 'São Bernardo do Campo (SP)', sensorType: 'Sensor Sísmico Magnético P1', lastReading: '0.38 m/s² (Monitoramento)', severity: 'P2', status: 'EM_RETROFIT', limitAccel: '> 0.50 m/s²' },
+    { id: 'ELV-SPO-03', unit: 'Torre Norte Alta Velocidade', client: 'Condomínio Edifício Faria Lima Corporate', city: 'São Paulo (SP)', sensorType: 'Vibrometro Triaxial P3 (Vento)', lastReading: '0.08 m/s² (Estático)', severity: 'P3', status: 'HOMOLOGADO', limitAccel: '> 0.25 m/s²' },
+    { id: 'ELV-SAN-01', unit: 'Ala Sul Panorâmico', client: 'Shopping Praiamar Santos', city: 'Santos (SP)', sensorType: 'Sensor Inclinômetro Dinâmico P3', lastReading: '0.14 m/s² (Ondulação)', severity: 'P3', status: 'HOMOLOGADO', limitAccel: '> 0.30 m/s²' },
+    { id: 'ELV-RIO-01', unit: 'Torre Executiva 01', client: 'Torre Rio Sul Botafogo', city: 'Rio de Janeiro (RJ)', sensorType: 'Acelerômetro Piezoelétrico P2', lastReading: '0.22 m/s² (Estável)', severity: 'P2', status: 'HOMOLOGADO', limitAccel: '> 0.40 m/s²' }
   ]);
 
   const filteredSeismicList = useMemo(() => {
@@ -342,14 +341,11 @@ export const FutureIoTModule: React.FC = () => {
   const [predictiveFilter, setPredictiveFilter] = useState<'ALL' | 'URGENTE' | 'ATENCAO' | 'NORMAL'>('ALL');
   const [predictiveSearch, setPredictiveSearch] = useState<string>('');
   const [predictiveRows, setPredictiveRows] = useState<PredictivePart[]>([
-    { id: 'EQ-9042', client: 'Ed. Paulista Corporate (SP)', city: 'São Paulo', part: 'Cabo de Tração Coated CS', hours: 18450, risk: 89, daysLeft: 5, status: 'URGENTE', action: 'Trocar Cabo CS Imediatamente' },
-    { id: 'EQ-7721', client: 'Shopping Praiamar (Santos)', city: 'Santos', part: 'Patim de Freio Cerâmico', hours: 14100, risk: 94, daysLeft: 3, status: 'URGENTE', action: 'Substituição Imediata de Patins' },
-    { id: 'EQ-4033', client: 'Porto de Santos Terminal 2', city: 'Santos', part: 'Operador de Porta Sellcom HD', hours: 16500, risk: 82, daysLeft: 8, status: 'URGENTE', action: 'Substituir Roldanas/Correia' },
-    { id: 'EQ-8812', client: 'Torres de México Tower A', city: 'CDMX', part: 'Sensor Sísmico Triaxial', hours: 12300, risk: 76, daysLeft: 14, status: 'ATENCAO', action: 'Calibrar & Fixação Sísmica' },
-    { id: 'EQ-5114', client: 'Ed. Faria Lima Plaza (SP)', city: 'São Paulo', part: 'Inversor VVVF Regen Drive', hours: 9800, risk: 68, daysLeft: 18, status: 'ATENCAO', action: 'Ajustar Tensão & Capacitores' },
-    { id: 'EQ-3301', client: 'Empresarial Barra Trade (RJ)', city: 'Rio de Janeiro', part: 'Patim de Freio Cerâmico', hours: 11200, risk: 62, daysLeft: 22, status: 'ATENCAO', action: 'Inspeção de Espessura' },
-    { id: 'EQ-6090', client: 'Hospital Moinhos de Vento', city: 'Porto Alegre', part: 'Inversor VVVF Regen Drive', hours: 22000, risk: 42, daysLeft: 65, status: 'NORMAL', action: 'Inspeção Preventiva Rotineira' },
-    { id: 'EQ-1092', client: 'Centro Empresarial Capital', city: 'São Paulo', part: 'Cabo de Tração Coated CS', hours: 7400, risk: 25, daysLeft: 120, status: 'NORMAL', action: 'Monitoramento Preditivo IoT' }
+    { id: 'ELV-CPS-01', client: 'Centro Empresarial Iguatemi Campinas', city: 'Campinas', part: 'Operador de Porta AT120', hours: 14100, risk: 85, daysLeft: 6, status: 'URGENTE', action: 'Substituição de Sapata Guia e Roletes' },
+    { id: 'ELV-SBC-04', client: 'Hospital e Maternidade Brasil - Rede D’Or', city: 'São Bernardo do Campo', part: 'Barreira Óptica 3D SafeGuard', hours: 16500, risk: 92, daysLeft: 3, status: 'URGENTE', action: 'Instalar Cortina de Luz 3D' },
+    { id: 'ELV-SPO-03', client: 'Condomínio Edifício Faria Lima Corporate', city: 'São Paulo', part: 'Inversor VVVF Regen Drive', hours: 9800, risk: 68, daysLeft: 18, status: 'ATENCAO', action: 'Ajustar Tensão & Capacitores' },
+    { id: 'ELV-SAN-01', client: 'Shopping Praiamar Santos', city: 'Santos', part: 'Cabo de Tração CSB Revestido', hours: 11200, risk: 62, daysLeft: 22, status: 'ATENCAO', action: 'Inspeção Ultrassônica de Cintas' },
+    { id: 'ELV-RIO-01', client: 'Torre Rio Sul Botafogo', city: 'Rio de Janeiro', part: 'Patim de Freio Eletromecânico', hours: 7400, risk: 25, daysLeft: 120, status: 'NORMAL', action: 'Monitoramento Preditivo IoT' }
   ]);
 
   const filteredPredictiveRows = useMemo(() => {
@@ -491,10 +487,9 @@ export const FutureIoTModule: React.FC = () => {
   }
 
   const contractAudits: ContractAudit[] = [
-    { id: 'CA-STS-01', unit: 'ELV-04 Santos Concais', client: 'Terminal Marítimo Concais', location: 'Santos / SP', criticalFactor: 'Névoa Salina Severa (88% UR) + 4.200h uso', excessWearPct: '+38%', currentFee: 2850, proposedFee: 3288.90 },
-    { id: 'CA-CDMX-09', unit: 'ELV-12 Torre Reforma', client: 'Banco Santander México', location: 'CDMX / México', criticalFactor: 'Micro-vibrações sísmicas diárias (0.65 m/s²)', excessWearPct: '+34%', currentFee: 3200, proposedFee: 3692.80 },
-    { id: 'CA-POA-03', unit: 'ELV-02 Hospital Moinhos', client: 'Hospital Moinhos de Vento', location: 'Porto Alegre / RS', criticalFactor: 'Ciclos Contínuos 24/7 UTI + Amplitude Térmica', excessWearPct: '+31%', currentFee: 2600, proposedFee: 3000.40 },
-    { id: 'CA-SP-88', unit: 'ELV-09 Faria Lima Plaza', client: 'Brookfield Properties', location: 'São Paulo / SP', criticalFactor: 'Picos de Sobrecarga Matutino/Noturno (> 95% cap)', excessWearPct: '+32%', currentFee: 3400, proposedFee: 3923.60 }
+    { id: 'CA-SAN-01', unit: 'ELV-SAN-01 Ala Sul', client: 'Shopping Praiamar Santos', location: 'Santos / SP', criticalFactor: 'Névoa Salina Costeira + Alto Tráfego', excessWearPct: '+28%', currentFee: 2850, proposedFee: 3288.90 },
+    { id: 'CA-SBC-04', unit: 'ELV-SBC-04 Bloco Cirúrgico', client: 'Hospital e Maternidade Brasil - Rede D’Or', location: 'São Bernardo do Campo / SP', criticalFactor: 'Ciclos Contínuos 24/7 de Macas e Emergências', excessWearPct: '+34%', currentFee: 3200, proposedFee: 3692.80 },
+    { id: 'CA-CPS-01', unit: 'ELV-CPS-01 Torre A', client: 'Centro Empresarial Iguatemi Campinas', location: 'Campinas / SP', criticalFactor: 'Picos de Sobrecarga Comercial nos Horários de Almoço', excessWearPct: '+22%', currentFee: 3400, proposedFee: 3820.00 }
   ];
 
   const [selectedAuditForModal, setSelectedAuditForModal] = useState<ContractAudit | null>(null);

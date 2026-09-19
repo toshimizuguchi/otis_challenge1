@@ -1,27 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useApp, ActiveView, isViewAllowedForRole } from '../../context/AppContext';
+import { generateSmartFlowAlerts } from '../../utils/smartFlowAI';
 import { 
   LayoutDashboard, 
+  MapPin, 
+  Wrench, 
+  FileText, 
+  Settings, 
+  LogOut, 
+  Users, 
   PhoneCall, 
   Building2, 
-  Wrench, 
-  Users, 
-  BrainCircuit, 
+  TrendingUp, 
   Package, 
-  FileText, 
+  Award, 
   DollarSign, 
-  MapPin, 
-  Bell, 
-  FileSpreadsheet, 
-  Settings,
-  LogOut,
-  Smartphone,
+  BrainCircuit, 
+  Globe, 
+  ChevronRight,
+  Menu,
+  X,
+  FileSpreadsheet,
   Clock,
-  Award,
-  Globe,
-  TrendingUp,
-  Cpu,
-  X
+  Sparkles,
+  Smartphone,
+  Cpu
 } from 'lucide-react';
 import { TimeClockModal } from '../modals/TimeClockModal';
 
@@ -46,7 +49,7 @@ interface NavSection {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseMobile }) => {
-  const { activeView, setActiveView, calls, alerts, currentUser, employees, logout } = useApp();
+  const { activeView, setActiveView, calls, contracts, equipments, parts, currentUser, employees, logout } = useApp();
   const [isTimeClockOpen, setIsTimeClockOpen] = useState(false);
   const [time, setTime] = useState(() => new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
 
@@ -56,7 +59,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
   }, []);
 
   const activeCalls = calls.filter(c => c.status !== 'CONCLUIDO' && c.status !== 'CANCELADO').length;
-  const criticalAlerts = alerts.filter(a => !a.read && (a.severity === 'CRITICA' || a.category === 'CRITICO')).length;
+  
+  // SmartFlow IA & Alertas calculados a partir dos dados 100% reais
+  const smartAlerts = useMemo(() => generateSmartFlowAlerts({ contracts, calls, equipments, parts, employees }), [contracts, calls, equipments, parts, employees]);
+  const criticalAlerts = smartAlerts.filter(a => a.severity === 'CRITICO').length;
+
   const currentEmp = employees.find(e => e.id === currentUser.id);
   const punchStatus = currentEmp?.currentPunchStatus || 'FORA_DE_TURNO';
 
@@ -67,15 +74,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
     ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' 
     : 'bg-slate-800 text-slate-400 border-slate-700';
 
-  const getDashLabel = () => {
+  const getDashboardLabel = () => {
     const map: Record<string, string> = {
-      TECNICO: 'Meu Painel', 
+      PRESIDENTE: 'Painel Executivo',
+      GERENTE: 'Painel Gerencial',
       SUPERVISOR: 'Painel do Polo',
-      GERENTE: 'Painel Gerencial', 
+      TECNICO: 'Meu Painel',
       ATENDENTE: 'Central de Chamados',
-      FINANCEIRO: 'Financeiro', 
-      PRESIDENTE: 'Painel Executivo', 
-      ADMINISTRADOR: 'Painel Executivo',
+      FINANCEIRO: 'Painel Financeiro & Margens',
+      ADMINISTRADOR: 'Painel Executivo'
     };
     return map[currentUser.role] || 'Dashboard';
   };
@@ -90,7 +97,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
               { id: 'dashboard', label: 'Meu Painel', icon: Smartphone },
               { id: 'calls',     label: 'Minhas Ordens', icon: PhoneCall, count: activeCalls, countType: 'blue' },
               { id: 'parts',     label: 'Peças & Componentes', icon: Package },
-              { id: 'alerts',    label: 'Alertas', icon: Bell, count: criticalAlerts, countType: 'red' },
+              { id: 'intelligence', label: 'SmartFlow IA & Alertas', icon: BrainCircuit, count: criticalAlerts, countType: 'red' },
             ]
           }
         ];
@@ -110,7 +117,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
             title: 'Monitoramento & Campo',
             items: [
               { id: 'maps',       label: 'Radar em Tempo Real', icon: MapPin },
-              { id: 'alerts',     label: 'Alertas Críticos', icon: Bell, count: criticalAlerts, countType: 'red' },
+              { id: 'intelligence', label: 'SmartFlow IA & Alertas', icon: BrainCircuit, count: criticalAlerts, countType: 'red' },
             ]
           }
         ];
@@ -135,11 +142,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
             ]
           },
           {
-            title: 'Tecnologia & IoT',
+            title: 'Tecnologia & IA',
             items: [
-              { id: 'future_iot',   label: 'OTIS ONE & SCADA', icon: Cpu },
+              { id: 'intelligence', label: 'SmartFlow IA & Alertas', icon: BrainCircuit, count: criticalAlerts, countType: 'red' },
               { id: 'predictive',   label: 'Predição Andar & Uso', icon: TrendingUp },
-              { id: 'intelligence', label: 'SmartFlow IA', icon: BrainCircuit },
+              { id: 'future_iot',   label: 'OTIS ONE & SCADA', icon: Cpu },
             ]
           },
           {
@@ -148,7 +155,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
               { id: 'maps',     label: 'Radar em Tempo Real', icon: MapPin },
               { id: 'training', label: 'Treinamentos da Equipe', icon: Award },
               { id: 'reports',  label: 'Relatórios do Polo', icon: FileSpreadsheet },
-              { id: 'alerts',   label: 'Alertas', icon: Bell, count: criticalAlerts, countType: 'red' },
             ]
           }
         ];
@@ -167,7 +173,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
           {
             title: 'Inteligência & IoT',
             items: [
-              { id: 'intelligence', label: 'Inteligência Operacional', icon: BrainCircuit },
+              { id: 'intelligence', label: 'SmartFlow IA & Alertas', icon: BrainCircuit, count: criticalAlerts, countType: 'red' },
               { id: 'predictive',   label: 'Predição Andar & Uso', icon: TrendingUp },
               { id: 'future_iot',   label: 'OTIS ONE & SCADA', icon: Cpu },
               { id: 'equipments',   label: 'Parque Instalado', icon: Building2 },
@@ -179,7 +185,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
               { id: 'maps',      label: 'Mapa em Tempo Real', icon: MapPin },
               { id: 'financial', label: 'Financeiro & Margens', icon: DollarSign },
               { id: 'reports',   label: 'Relatórios Executivos', icon: FileSpreadsheet },
-              { id: 'alerts',    label: 'Alertas Críticos', icon: Bell, count: criticalAlerts, countType: 'red' },
             ]
           }
         ];
@@ -198,7 +203,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
           {
             title: 'Inovação & IA',
             items: [
-              { id: 'intelligence', label: 'SmartFlow IA', icon: BrainCircuit },
+              { id: 'intelligence', label: 'SmartFlow IA & Alertas', icon: BrainCircuit, count: criticalAlerts, countType: 'red' },
               { id: 'predictive',   label: 'Predição Andar & Uso', icon: TrendingUp },
               { id: 'future_iot',   label: 'OTIS ONE & SCADA', icon: Cpu },
               { id: 'contracts',    label: 'Grandes Contratos', icon: FileText },
@@ -209,7 +214,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
             items: [
               { id: 'maps',    label: 'Radar Nacional', icon: MapPin },
               { id: 'reports', label: 'Relatórios da Presidência', icon: FileSpreadsheet },
-              { id: 'alerts',  label: 'Alertas Estratégicos', icon: Bell, count: criticalAlerts, countType: 'red' },
             ]
           }
         ];
@@ -221,6 +225,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
             items: [
               { id: 'financial', label: 'Painel Financeiro & Margens', icon: LayoutDashboard },
               { id: 'contracts', label: 'Contratos & Faturamento', icon: FileText },
+              { id: 'intelligence', label: 'SmartFlow IA & Alertas', icon: BrainCircuit, count: criticalAlerts, countType: 'red' },
             ]
           },
           {
@@ -252,7 +257,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
               { id: 'equipments',   label: 'Equipamentos', icon: Building2 },
               { id: 'predictive',   label: 'Predição Andar & Uso', icon: TrendingUp },
               { id: 'future_iot',   label: 'OTIS ONE & SCADA', icon: Cpu },
-              { id: 'intelligence', label: 'SmartFlow IA', icon: BrainCircuit },
+              { id: 'intelligence', label: 'SmartFlow IA & Alertas', icon: BrainCircuit, count: criticalAlerts, countType: 'red' },
             ]
           },
           {
@@ -262,7 +267,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
               { id: 'contracts', label: 'Contratos', icon: FileText },
               { id: 'financial', label: 'Financeiro', icon: DollarSign },
               { id: 'reports',   label: 'Relatórios', icon: FileSpreadsheet },
-              { id: 'alerts',    label: 'Alertas', icon: Bell, count: criticalAlerts, countType: 'red' },
               { id: 'settings',  label: 'Configurações', icon: Settings },
             ]
           }
@@ -357,6 +361,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
             <div className="space-y-0.5">
               {section.items.map(item => {
                 const isActive = activeView === item.id || 
+                  (item.id === 'intelligence' && activeView === 'alerts') ||
                   (currentUser.role === 'FINANCEIRO' && item.id === 'financial' && activeView === 'dashboard');
                 const Icon = item.icon;
 

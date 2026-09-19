@@ -114,7 +114,7 @@ const MainLayout: React.FC = () => {
       case 'maps':
         return <MapsModule />;
       case 'alerts':
-        return <AlertsCenter />;
+        return <SmartFlowIntelligence />;
       case 'import':
         return <DataImportModule />;
       case 'future_iot':

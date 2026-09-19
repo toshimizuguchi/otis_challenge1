@@ -33,7 +33,8 @@ export const SupervisorDashboard: React.FC = () => {
     confirmAIRecommendation, 
     setSelectedCallId, 
     setActiveView,
-    addToast
+    addToast,
+    currentUser
   } = useApp();
 
   const [selectedTechFilter, setSelectedTechFilter] = useState<string>('TODOS');
@@ -42,10 +43,18 @@ export const SupervisorDashboard: React.FC = () => {
   const [overrideReason, setOverrideReason] = useState<string>('');
   const [chosenTechId, setChosenTechId] = useState<string>(technicians[0]?.id || '');
 
-  // Campinas Polo Supervisor: Roberto Viana
-  const poloTechnicians = technicians.filter(t => 
-    t.city === 'Campinas' || t.supervisorName.includes('Viana') || t.supervisorId === 'sup-1'
-  );
+  const supervisorName = currentUser?.role === 'SUPERVISOR' ? currentUser.name : 'Roberto Viana';
+  const supervisorRegion = currentUser?.role === 'SUPERVISOR' 
+    ? (currentUser.region || currentUser.city || 'Campinas & RMC') 
+    : 'Campinas & RMC';
+
+  // Dynamic Polo filtering according to logged-in supervisor
+  const poloTechnicians = technicians.filter(t => {
+    if (currentUser?.role === 'SUPERVISOR') {
+      return t.city === currentUser.city || t.supervisorId === currentUser.id || t.supervisorName === currentUser.name;
+    }
+    return t.city === 'Campinas' || t.supervisorName.includes('Viana') || t.supervisorId === 'sup-1';
+  });
   
   const myTechnicians = selectedTechFilter === 'TODOS'
     ? poloTechnicians
@@ -56,7 +65,12 @@ export const SupervisorDashboard: React.FC = () => {
   );
 
   const selectedMapTech = technicians.find(t => t.id === selectedMapTechId) || poloTechnicians[0] || technicians[0];
-  const myCalls = calls.filter(c => c.city === 'Campinas' || c.supervisorName.includes('Viana'));
+  const myCalls = calls.filter(c => {
+    if (currentUser?.role === 'SUPERVISOR') {
+      return c.city === currentUser.city || c.supervisorName === currentUser.name;
+    }
+    return c.city === 'Campinas' || c.supervisorName.includes('Viana');
+  });
   
   const activeCalls = myCalls.filter(c => c.status !== 'CONCLUIDO' && c.status !== 'CANCELADO');
   const criticalCalls = activeCalls.filter(c => c.priority === 'CRITICO');
@@ -86,10 +100,10 @@ export const SupervisorDashboard: React.FC = () => {
             <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
               Centro de Comando Operacional
             </span>
-            <span className="text-xs text-slate-400 font-mono">Polo Regional: Campinas & RMC</span>
+            <span className="text-xs text-slate-400 font-mono">Polo Regional: {supervisorRegion}</span>
           </div>
           <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight mt-1">
-            Bom dia, Roberto Viana (Supervisor).
+            Bom dia, {supervisorName} (Supervisor).
           </h1>
           <p className="text-xs sm:text-sm text-slate-300">
             Acompanhe o posicionamento dos seus técnicos, alertas de SLA em tempo real e recomendações do Copilot.

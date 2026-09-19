@@ -1,330 +1,299 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { 
-  Sparkles, 
-  Cpu, 
-  ShieldCheck, 
-  Layers, 
+  BrainCircuit, 
   AlertTriangle, 
-  CheckCircle2,
-  ArrowRight,
-  ChevronDown,
-  Play
+  ShieldAlert, 
+  ShieldCheck, 
+  DollarSign, 
+  Wrench, 
+  Sparkles, 
+  CheckCircle2, 
+  Package, 
+  Users, 
+  Clock, 
+  ChevronRight, 
+  Filter, 
+  Activity,
+  Layers,
+  ArrowUpRight,
+  Info
 } from 'lucide-react';
+import { generateSmartFlowAlerts, SmartFlowAlert } from '../../utils/smartFlowAI';
+import { EmptyState } from '../common/EmptyState';
 
 export const SmartFlowIntelligence: React.FC = () => {
   const { 
-    aiInsights, 
-    createMaintenanceCampaign,
-    addToast,
+    contracts, 
+    calls, 
+    equipments, 
+    parts, 
+    employees, 
     setActiveView 
   } = useApp();
 
-  const [activeCategory, setActiveCategory] = useState<'ALL' | 'OPERACIONAL' | 'PREDITIVO' | 'ESTRATEGICO'>('ALL');
-  const [expandedInsights, setExpandedInsights] = useState<Record<string, boolean>>({});
+  const [selectedCategory, setSelectedCategory] = useState<string>('TODAS');
+  const [selectedSeverity, setSelectedSeverity] = useState<string>('TODAS');
 
-  const toggleInsight = (id: string) => {
-    setExpandedInsights(prev => ({
-      ...prev,
-      [id]: !prev[id]
-    }));
-  };
+  // Geração dos alertas via motor analítico com dados 100% reais do sistema
+  const alerts = useMemo(() => {
+    return generateSmartFlowAlerts({
+      contracts,
+      calls,
+      equipments,
+      parts,
+      employees
+    });
+  }, [contracts, calls, equipments, parts, employees]);
 
-  const categoryConfig: Record<string, { order: number; label: string; numberLabel: string; icon: React.ElementType; badgeClass: string; borderClass: string; textClass: string }> = {
-    OPERACIONAL: {
-      order: 1,
-      label: 'Operacional',
-      numberLabel: '1. Operacional',
-      icon: Cpu,
-      badgeClass: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30',
-      borderClass: 'border-cyan-500/40',
-      textClass: 'text-cyan-400'
-    },
-    PREDITIVO: {
-      order: 2,
-      label: 'Preditiva',
-      numberLabel: '2. Preditiva',
-      icon: ShieldCheck,
-      badgeClass: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30',
-      borderClass: 'border-indigo-500/40',
-      textClass: 'text-indigo-400'
-    },
-    ESTRATEGICO: {
-      order: 3,
-      label: 'Estratégica',
-      numberLabel: '3. Estratégica',
-      icon: Layers,
-      badgeClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
-      borderClass: 'border-emerald-500/40',
-      textClass: 'text-emerald-400'
+  // Contadores para KPIs no topo
+  const criticalCount = alerts.filter(a => a.severity === 'CRITICO').length;
+  const financialCount = alerts.filter(a => a.type === 'FINANCEIRO').length;
+  const operationalCount = alerts.filter(a => a.type === 'OPERACIONAL').length;
+  const predictiveCount = alerts.filter(a => a.type === 'PREDITIVO').length;
+
+  // Filtragem da lista
+  const filteredAlerts = alerts.filter(a => {
+    const matchCategory = selectedCategory === 'TODAS' || a.type === selectedCategory;
+    const matchSeverity = selectedSeverity === 'TODAS' || a.severity === selectedSeverity;
+    return matchCategory && matchSeverity;
+  });
+
+  const getSeverityBadge = (severity: SmartFlowAlert['severity']) => {
+    switch (severity) {
+      case 'CRITICO':
+        return 'bg-rose-500/20 text-rose-300 border-rose-500/40 animate-pulse';
+      case 'ALTO':
+        return 'bg-amber-500/20 text-amber-300 border-amber-500/40';
+      case 'MEDIO':
+        return 'bg-blue-500/20 text-blue-300 border-blue-500/40';
+      default:
+        return 'bg-slate-800 text-slate-300 border-slate-700';
     }
   };
 
-  // Sort insights strictly by category order (1. Operacional, 2. Preditiva, 3. Estratégica)
-  const sortedInsights = [...aiInsights].sort((a, b) => {
-    const orderA = categoryConfig[a.category]?.order ?? 99;
-    const orderB = categoryConfig[b.category]?.order ?? 99;
-    return orderA - orderB;
-  });
-
-  const filteredInsights = sortedInsights.filter(i => {
-    if (activeCategory === 'ALL') return true;
-    return i.category === activeCategory;
-  });
+  const getTypeIcon = (type: SmartFlowAlert['type']) => {
+    switch (type) {
+      case 'FINANCEIRO':
+        return <DollarSign className="w-4 h-4 text-emerald-400" />;
+      case 'OPERACIONAL':
+        return <Activity className="w-4 h-4 text-amber-400" />;
+      case 'PREDITIVO':
+        return <Wrench className="w-4 h-4 text-cyan-400" />;
+      case 'ESTOQUE':
+        return <Package className="w-4 h-4 text-purple-400" />;
+      case 'RH':
+        return <Users className="w-4 h-4 text-blue-400" />;
+      default:
+        return <AlertTriangle className="w-4 h-4 text-slate-400" />;
+    }
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       
-      {/* Header with 3 Layers Badge */}
-      <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950/50 to-slate-900 border border-indigo-700/50 shadow-lg space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-bold">
-              <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-              <span>SmartFlow AI Core • 3 Camadas de Inteligência</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              Cérebro Operacional, Preditivo & Estratégico
-            </h1>
+      {/* Header Unificado */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 border border-indigo-800/40 shadow-sm">
+        <div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 flex items-center gap-1.5">
+              <Sparkles className="w-3 h-3 text-cyan-400" />
+              SmartFlow IA & Central de Alertas
+            </span>
+            <span className="text-xs text-slate-400 font-mono">
+              Monitoramento Analítico em Tempo Real
+            </span>
           </div>
-
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => {
-                createMaintenanceCampaign({
-                  title: 'Campanha Nacional Portas Gen2 Comfort',
-                  modelTarget: 'Gen2 Comfort',
-                  riskDescription: 'Campanha integrada de substituição antecipada de componentes de alto desgaste.',
-                  status: 'EM_ANDAMENTO'
-                });
-                addToast({
-                  type: 'success',
-                  title: 'Campanha em Lote Disparada',
-                  message: 'Ações preventivas geradas para 320 elevadores mapeados pela IA.'
-                });
-              }}
-              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 text-white text-xs font-bold shadow-lg shadow-cyan-600/30 transition-all flex items-center gap-2 cursor-pointer ring-1 ring-cyan-400/40"
-            >
-              <Play className="w-4 h-4" />
-              <span>Disparar Campanha em Lote</span>
-            </button>
-          </div>
+          <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight mt-1">
+            Inteligência Operacional & Gestão de Alertas
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl">
+            O SmartFlow IA inspeciona continuamente os contratos, chamados, parque instalado, peças e folha, emitindo alertas imediatos sobre desvios e oportunidades de intervenção.
+          </p>
         </div>
 
-        {/* 3 Intelligence Layers Tab Selector */}
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-800/80">
-          <button
-            onClick={() => setActiveCategory('ALL')}
-            className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-              activeCategory === 'ALL'
-                ? 'bg-cyan-500/15 border-cyan-500/50 text-cyan-300'
-                : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:bg-slate-800'
-            }`}
-          >
-            <div className="text-xs font-bold">Todas as Camadas</div>
-            <div className="text-[10px] text-slate-400">{aiInsights.length} prescrições ativas</div>
-          </button>
-
-          <button
-            onClick={() => setActiveCategory('OPERACIONAL')}
-            className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-              activeCategory === 'OPERACIONAL'
-                ? 'bg-cyan-500/15 border-cyan-500/50 text-cyan-300'
-                : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:bg-slate-800'
-            }`}
-          >
-            <div className="flex items-center gap-1.5 text-xs font-bold">
-              <Cpu className="w-3.5 h-3.5 text-cyan-400" />
-              <span>1. Operacional</span>
+        {/* Status de Monitoramento */}
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center gap-2.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+            <div>
+              <span className="text-[10px] text-slate-400 uppercase font-semibold block leading-tight">Motor Analítico</span>
+              <span className="text-xs font-bold text-emerald-400 font-mono">100% Conectado</span>
             </div>
-            <div className="text-[10px] text-slate-400">Supervisor: rotas e despacho rápido</div>
-          </button>
-
-          <button
-            onClick={() => setActiveCategory('PREDITIVO')}
-            className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-              activeCategory === 'PREDITIVO'
-                ? 'bg-indigo-500/15 border-indigo-500/50 text-indigo-300'
-                : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:bg-slate-800'
-            }`}
-          >
-            <div className="flex items-center gap-1.5 text-xs font-bold">
-              <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
-              <span>2. Preditiva</span>
-            </div>
-            <div className="text-[10px] text-slate-400">Equipamentos: desgastes e falhas mecânicas</div>
-          </button>
-
-          <button
-            onClick={() => setActiveCategory('ESTRATEGICO')}
-            className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-              activeCategory === 'ESTRATEGICO'
-                ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-300'
-                : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:bg-slate-800'
-            }`}
-          >
-            <div className="flex items-center gap-1.5 text-xs font-bold">
-              <Layers className="w-3.5 h-3.5 text-emerald-400" />
-              <span>3. Estratégica</span>
-            </div>
-            <div className="text-[10px] text-slate-400">Negócio: rentabilidade de contratos</div>
-          </button>
+          </div>
         </div>
       </div>
 
-      {/* Accordion List of Insights: 1. Operacional, 2. Preditiva, 3. Estratégica */}
-      <div className="space-y-3.5">
-        {filteredInsights.map((insight) => {
-          const config = categoryConfig[insight.category] || categoryConfig.OPERACIONAL;
-          const Icon = config.icon;
-          const isExpanded = !!expandedInsights[insight.id];
+      {/* Indicadores Consolidados */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+        <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-1">
+          <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Total de Alertas</span>
+          <div className="text-2xl sm:text-3xl font-black text-white font-mono">{alerts.length}</div>
+          <span className="text-[11px] text-slate-400">Identificados pelo motor da IA</span>
+        </div>
 
-          return (
+        <div className={`p-4 rounded-2xl border space-y-1 ${
+          criticalCount > 0 ? 'bg-rose-950/20 border-rose-500/40 shadow-sm shadow-rose-950/20' : 'bg-slate-900/90 border-slate-800'
+        }`}>
+          <span className="text-[10px] uppercase font-bold tracking-wider text-rose-300 block">Alertas Críticos</span>
+          <div className="text-2xl sm:text-3xl font-black text-rose-400 font-mono">{criticalCount}</div>
+          <span className="text-[11px] text-slate-400">Ação imediata recomendada</span>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-1">
+          <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-300 block">Desvios Financeiros</span>
+          <div className="text-2xl sm:text-3xl font-black text-emerald-400 font-mono">{financialCount}</div>
+          <span className="text-[11px] text-slate-400">Contratos com queda de margem</span>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-1">
+          <span className="text-[10px] uppercase font-bold tracking-wider text-cyan-300 block">Risco Preditivo / IoT</span>
+          <div className="text-2xl sm:text-3xl font-black text-cyan-400 font-mono">{predictiveCount}</div>
+          <span className="text-[11px] text-slate-400">Equipamentos em atenção</span>
+        </div>
+      </div>
+
+      {/* Barra de Filtros */}
+      <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Filter className="w-4 h-4 text-slate-400" />
+          <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">Filtrar Alertas:</span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:border-cyan-500 font-medium"
+          >
+            <option value="TODAS">Todas as Categorias</option>
+            <option value="FINANCEIRO">💰 Financeiro (Margens & Custos)</option>
+            <option value="OPERACIONAL">🚨 Operacional (Chamados & SLA)</option>
+            <option value="PREDITIVO">⚙️ Preditivo (Equipamentos & Falhas)</option>
+            <option value="ESTOQUE">📦 Almoxarifado (Peças & Estoque)</option>
+            <option value="RH">👥 Governança & RH (Horas Extras & Folha)</option>
+          </select>
+
+          <select
+            value={selectedSeverity}
+            onChange={(e) => setSelectedSeverity(e.target.value)}
+            className="px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:border-cyan-500 font-medium"
+          >
+            <option value="TODAS">Todas as Severidades</option>
+            <option value="CRITICO">🔴 Crítico</option>
+            <option value="ALTO">🟡 Alto</option>
+            <option value="MEDIO">🔵 Médio</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Lista de Alertas ou Empty State */}
+      {filteredAlerts.length === 0 ? (
+        <EmptyState
+          icon={ShieldCheck}
+          title="Nenhum alerta ativo no momento"
+          description={
+            selectedCategory !== 'TODAS' || selectedSeverity !== 'TODAS'
+              ? 'Nenhum alerta encontrado para os filtros selecionados.'
+              : 'O SmartFlow IA analisou todos os contratos, chamados em aberto, equipamentos conectados, níveis de estoque e horas extras. Todos os parâmetros estão dentro das metas de conformidade.'
+          }
+        />
+      ) : (
+        <div className="space-y-3.5">
+          {filteredAlerts.map((alert) => (
             <div
-              key={insight.id}
-              id={`insight-card-${insight.id}`}
-              className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
-                isExpanded
-                  ? 'bg-slate-900/95 border-cyan-500/50 shadow-lg shadow-cyan-950/20 ring-1 ring-cyan-500/20'
-                  : 'bg-slate-900/80 border-slate-800/80 hover:border-slate-700'
+              key={alert.id}
+              className={`p-4 sm:p-5 rounded-2xl bg-slate-900/90 border transition-all shadow-sm space-y-3 ${
+                alert.severity === 'CRITICO' 
+                  ? 'border-rose-500/50 shadow-md shadow-rose-950/20' 
+                  : alert.severity === 'ALTO'
+                  ? 'border-amber-500/40'
+                  : 'border-slate-800'
               }`}
             >
-              {/* Header Button: Category, Confidence, Title and Arrow */}
-              <button
-                id={`insight-toggle-${insight.id}`}
-                type="button"
-                onClick={() => toggleInsight(insight.id)}
-                className="w-full p-4 sm:p-5 flex items-center justify-between text-left gap-3 group cursor-pointer focus:outline-none"
-                aria-expanded={isExpanded}
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 min-w-0">
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className={`px-2.5 py-1 rounded text-xs font-bold uppercase font-mono border flex items-center gap-1.5 ${config.badgeClass}`}>
-                      <Icon className="w-3.5 h-3.5" />
-                      <span>{config.numberLabel}</span>
-                    </span>
-
-                    <span className="text-xs font-bold font-mono text-cyan-400 flex items-center gap-1">
-                      <Sparkles className="w-3 h-3 text-cyan-400" />
-                      {insight.confidenceScore}% confiança
-                    </span>
-                  </div>
-
-                  <div className="text-sm sm:text-base font-bold text-slate-100 group-hover:text-cyan-300 transition-colors truncate">
-                    {insight.title}
-                  </div>
-                </div>
-
-                <div className="shrink-0 pl-2">
-                  <span
-                    className={`p-1.5 rounded-lg bg-slate-950/80 border border-slate-800 group-hover:border-slate-700 flex items-center justify-center transition-all ${
-                      isExpanded ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-300' : 'text-slate-400'
-                    }`}
-                    title={isExpanded ? 'Recolher detalhes' : 'Ver explicação completa'}
-                  >
-                    <ChevronDown
-                      className={`w-4 h-4 transition-transform duration-200 ${
-                        isExpanded ? 'rotate-180 text-cyan-400' : ''
-                      }`}
-                    />
+              {/* Header do Card de Alerta */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="p-1.5 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center">
+                    {getTypeIcon(alert.type)}
+                  </span>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold border uppercase tracking-wider ${getSeverityBadge(alert.severity)}`}>
+                    Nível: {alert.severity}
+                  </span>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700 font-mono">
+                    {alert.type}
+                  </span>
+                  <span className="text-[11px] text-slate-500 flex items-center gap-1 font-mono">
+                    <Clock className="w-3 h-3 text-slate-500" />
+                    {alert.timestamp}
                   </span>
                 </div>
-              </button>
 
-              {/* Collapsible Content */}
-              {isExpanded && (
-                <div className="px-4 sm:px-5 pb-5 pt-3 border-t border-slate-800/80 space-y-4 animate-in fade-in duration-200 bg-slate-950/40">
-                  {/* Resumo / Explicação */}
-                  <div className="space-y-1">
-                    <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                      Diagnóstico Identificado
-                    </div>
-                    <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                      "{insight.summary}"
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                    🟢 Status: {alert.status}
+                  </span>
+                </div>
+              </div>
+
+              {/* Título do Alerta */}
+              <h3 className="text-sm sm:text-base font-bold text-white tracking-tight">
+                {alert.title}
+              </h3>
+
+              {/* Bloco Rastreável: Origem e Motivo Analítico */}
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-3 pt-1">
+                {/* Informação de Origem */}
+                <div className="md:col-span-4 p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1">
+                  <span className="text-[10px] text-cyan-400 uppercase font-bold tracking-wider block">
+                    Informação que Originou o Alerta
+                  </span>
+                  <div className="text-xs font-semibold text-slate-200">
+                    {alert.originInfo}
+                  </div>
+                  <span className="text-[10px] text-slate-400 block font-mono">
+                    Entidade: {alert.originEntity}
+                  </span>
+                </div>
+
+                {/* Motivo Analítico */}
+                <div className="md:col-span-8 p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1 flex flex-col justify-between">
+                  <div>
+                    <span className="text-[10px] text-amber-400 uppercase font-bold tracking-wider block">
+                      Motivo do Alerta (Diagnóstico SmartFlow IA)
+                    </span>
+                    <p className="text-xs text-slate-300 leading-relaxed font-medium mt-0.5">
+                      {alert.reason}
                     </p>
-                  </div>
-
-                  {/* Recomendação Prescritiva */}
-                  <div className="p-3.5 rounded-xl bg-slate-950/80 border border-cyan-500/30 space-y-1.5">
-                    <div className="text-[11px] font-bold text-cyan-300 flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-                      <span>Recomendação Prescritiva do SmartFlow AI</span>
-                    </div>
-                    <p className="text-xs text-slate-200 leading-relaxed font-medium">
-                      {insight.recommendedAction}
-                    </p>
-                  </div>
-
-                  {/* Evidências Observadas */}
-                  {insight.evidence && insight.evidence.length > 0 && (
-                    <div className="space-y-2">
-                      <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                        <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-                        <span>Evidências Identificadas</span>
-                      </div>
-                      <ul className="space-y-1.5 pl-1">
-                        {insight.evidence.map((ev, i) => (
-                          <li key={i} className="text-xs text-slate-300 flex items-start gap-2 leading-relaxed">
-                            <span className="text-cyan-400 font-mono mt-0.5">•</span>
-                            <span>{ev}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Metadados: Escopo & Impacto */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-800/80 text-xs">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-slate-400 text-[11px]">Escopo:</span>
-                      <span className="font-semibold text-slate-200">{insight.scope}</span>
-                    </div>
-                    {insight.estimatedImpact && (
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-slate-400 text-[11px]">Impacto:</span>
-                        <span className="font-bold text-emerald-400 font-mono">{insight.estimatedImpact}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Botões de Ação */}
-                  <div className="pt-2 flex items-center justify-end gap-2.5">
-                    <button
-                      onClick={() => {
-                        if (insight.category === 'OPERACIONAL') setActiveView('supervisors');
-                        else if (insight.category === 'PREDITIVO') setActiveView('maintenance');
-                        else setActiveView('financial');
-                      }}
-                      className="px-3.5 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
-                    >
-                      <span>Ver no Módulo</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        createMaintenanceCampaign({
-                          title: `Campanha IA: ${insight.title}`,
-                          riskDescription: insight.recommendedAction,
-                          status: 'EM_ANDAMENTO'
-                        });
-                        addToast({
-                          type: 'success',
-                          title: 'Prescrição Executada',
-                          message: `Ação preventiva disparada para: ${insight.scope}`
-                        });
-                      }}
-                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 text-white text-xs font-bold shadow-md shadow-cyan-600/20 flex items-center gap-1.5 cursor-pointer transition-all"
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>Executar Ação</span>
-                    </button>
                   </div>
                 </div>
-              )}
+              </div>
+
+              {/* Ação para Visualizar Dados Relacionados */}
+              <div className="pt-2 border-t border-slate-800/80 flex items-center justify-end">
+                <button
+                  onClick={() => setActiveView(alert.actionView as any)}
+                  className="px-3.5 py-2 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/30 text-cyan-300 hover:text-cyan-200 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm group active:scale-95"
+                >
+                  <span>{alert.actionLabel}</span>
+                  <ArrowUpRight className="w-3.5 h-3.5 text-cyan-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                </button>
+              </div>
+
             </div>
-          );
-        })}
+          ))}
+        </div>
+      )}
+
+      {/* Painel Arquitetural de Transparência da IA */}
+      <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 flex items-start gap-3 text-xs text-slate-400">
+        <Info className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+        <div className="space-y-0.5">
+          <span className="font-bold text-slate-300">Arquitetura SmartFlow IA:</span>
+          <p className="leading-relaxed">
+            Os alertas acima são gerados deterministicamente pelo motor de regras analíticas a partir dos dados reais armazenados na aplicação. O sistema está preparado para expansão com modelos de inteligência artificial generativa (Google Gemini API / Vertex AI) para prognósticos preditivos profundos sem simulação de dados fictícios.
+          </p>
+        </div>
       </div>
 
     </div>

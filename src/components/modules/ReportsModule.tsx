@@ -34,12 +34,12 @@ export const ReportsModule: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
-          { title: 'Relatório Executivo Nacional (Presidência)', desc: 'Consolidado LATAM, disponibilidade 98.6%, SLA 97.2%, margens e economia acumulada.', format: 'PDF / CSV' },
-          { title: 'Relatório de Cumprimento de SLA por Polo', desc: 'Desempenho dos supervisores, TA médio, horas técnicas gastas e desvios de atendimento.', format: 'CSV / Excel' },
-          { title: 'Dossiê Financeiro & DRE de Contratos', desc: 'Receita vs peças vs mão de obra vs deslocamento por cliente e alertas de margem.', format: 'CSV / Excel' },
-          { title: 'Inventário Preditivo & Padrões de Falha', desc: 'Score de risco dos 1.248 equipamentos, ciclos de portas e histórico de falhas.', format: 'CSV / Excel' },
-          { title: 'Auditoria de Decisões: Supervisor vs IA', desc: 'Taxa de aceitação das recomendações do Copilot e justificativas registradas.', format: 'PDF / CSV' },
-          { title: 'Relatório de Desgaste e Almoxarifado', desc: 'Vida útil observada vs teórica de componentes e alertas de consumo fora do padrão.', format: 'CSV / Excel' }
+          { title: 'Relatório Executivo Nacional (Presidência)', desc: 'Consolidado executivo com disponibilidade da frota, SLA global, margens contratuais e economia apurada.', format: 'PDF / CSV' },
+          { title: 'Relatório de Cumprimento de SLA por Polo', desc: 'Desempenho dos supervisores, tempo médio de atendimento (TA/TB), horas técnicas e desvios.', format: 'CSV / Excel' },
+          { title: 'Dossiê Financeiro & DRE de Contratos', desc: 'Receita vs peças vs mão de obra vs deslocamento por cliente e alertas analíticos de margem.', format: 'CSV / Excel' },
+          { title: 'Inventário Preditivo & Padrões de Falha', desc: 'Score de risco preditivo da frota cadastrada, telemetria de portas e histórico de intervenções.', format: 'CSV / Excel' },
+          { title: 'Auditoria de Decisões: Supervisor vs IA', desc: 'Aderência às recomendações do SmartFlow IA e justificativas operacionais registradas.', format: 'PDF / CSV' },
+          { title: 'Relatório de Desgaste e Almoxarifado', desc: 'Vida útil observada vs teórica de componentes e alertas de estoque crítico.', format: 'CSV / Excel' }
         ].map((rep, idx) => (
           <div
             key={idx}

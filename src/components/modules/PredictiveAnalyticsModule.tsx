@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useApp } from '../../context/AppContext';
 import { 
   Building, 
   Clock, 
@@ -53,6 +54,7 @@ function calcularPredicao(serie: number[]) {
 }
 
 export const PredictiveAnalyticsModule: React.FC = () => {
+  const { equipments, customers, calls } = useApp();
   const [activeTab, setActiveTab] = useState<'ANDAR' | 'USO' | 'BUSCA'>('ANDAR');
   const [liveDateTime, setLiveDateTime] = useState('');
 
@@ -142,15 +144,23 @@ export const PredictiveAnalyticsModule: React.FC = () => {
   }).sort((a, b) => b.atual - a.atual);
 
   // =========================================================================
-  // SUB-MÓDULO 2: ANÁLISE DE USO DIÁRIO DO EQUIPAMENTO (Analise de uso html)
+  // SUB-MÓDULO 2: ANÁLISE DE USO DIÁRIO DO EQUIPAMENTO (Analise de uso)
+  // Baseado nos elevadores reais cadastrados no sistema Otis
   // =========================================================================
-  const [historicoEquipamentos, setHistoricoEquipamentos] = useState<Record<string, number[]>>({
-    "Gerador 01": [4, 6, 8, 10],
-    "Chiller 02": [12, 11, 9, 8],
-    "Compressor A": [8, 12, 18, 24],
-    "Bomba Hidráulica": [2, 3, 2, 4],
-    "Elevador Carga": [10, 12, 14, 16]
-  });
+  const [historicoEquipamentos, setHistoricoEquipamentos] = useState<Record<string, number[]>>({});
+
+  useEffect(() => {
+    if (equipments.length > 0) {
+      const initialMap: Record<string, number[]> = {};
+      equipments.slice(0, 5).forEach(eq => {
+        const key = eq.tag ? `${eq.tag} (${eq.name.split(' ')[0]})` : eq.name;
+        const base = Math.max(2, Math.round((eq.totalDowntimeHours || 8) / 2));
+        initialMap[key] = [base, base + 2, base + 3, base + 4];
+      });
+      setHistoricoEquipamentos(initialMap);
+    }
+  }, [equipments]);
+
   const [customEqInput, setCustomEqInput] = useState('');
 
   const adicionarHoraEquipamento = (nome: string) => {
@@ -208,15 +218,25 @@ export const PredictiveAnalyticsModule: React.FC = () => {
   }).sort((a, b) => b.atual - a.atual);
 
   // =========================================================================
-  // SUB-MÓDULO 3: ANÁLISE DE BUSCA DE CLIENTES POR TELEFONE (Busca cliente html)
+  // SUB-MÓDULO 3: ANÁLISE DE BUSCA DE CLIENTES POR TELEFONE (Busca cliente)
+  // Baseado nos clientes reais cadastrados no sistema Otis
   // =========================================================================
-  const [historicoClientes, setHistoricoClientes] = useState<Record<string, number[]>>({
-    "(11) 98765-4321 (Empresa Alpha)": [12, 14, 18, 22],
-    "(21) 97654-3210 (Tech Brasil)": [5, 8, 12, 15],
-    "(31) 98888-7777 (Distribuidora X)": [20, 18, 16, 12],
-    "(41) 99999-1111 (Comércio Y)": [2, 4, 3, 5],
-    "(51) 98123-4567 (Grupo Z)": [8, 10, 15, 20]
-  });
+  const [historicoClientes, setHistoricoClientes] = useState<Record<string, number[]>>({});
+
+  useEffect(() => {
+    if (customers.length > 0) {
+      const initialMap: Record<string, number[]> = {};
+      customers.slice(0, 5).forEach(cust => {
+        const phone = cust.phone || '(19) 3756-1000';
+        const key = `${phone} (${cust.name.split(' ')[0]})`;
+        const custCalls = calls.filter(c => c.customerId === cust.id).length;
+        const val = Math.max(2, custCalls);
+        initialMap[key] = [Math.max(1, val - 2), Math.max(1, val - 1), val, val + 1];
+      });
+      setHistoricoClientes(initialMap);
+    }
+  }, [customers, calls]);
+
   const [customTelefoneInput, setCustomTelefoneInput] = useState('');
 
   const adicionarBuscaCliente = (telefoneOuCliente: string) => {
@@ -531,7 +551,7 @@ export const PredictiveAnalyticsModule: React.FC = () => {
                   type="text"
                   value={customEqInput}
                   onChange={(e) => setCustomEqInput(e.target.value)}
-                  placeholder="Nome do equipamento (ex: Gerador 02)"
+                  placeholder="Tag ou Nome do equipamento (ex: ELV-CPS-01)"
                   className="w-full sm:w-64 px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:border-cyan-500"
                 />
                 <button
@@ -581,9 +601,11 @@ export const PredictiveAnalyticsModule: React.FC = () => {
             </div>
 
             <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-1">
-              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Índice de Saúde da Frota</div>
-              <div className="text-2xl font-bold font-mono text-emerald-400">98.2%</div>
-              <div className="text-xs text-slate-400">Operação dentro dos parâmetros</div>
+              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Disponibilidade Operacional</div>
+              <div className="text-2xl font-bold font-mono text-emerald-400">
+                {equipments.length > 0 ? ((equipments.filter(e => e.status === 'OPERACIONAL').length / equipments.length) * 100).toFixed(1) + '%' : '100%'}
+              </div>
+              <div className="text-xs text-slate-400">Frota monitorada em tempo real</div>
             </div>
           </div>
 

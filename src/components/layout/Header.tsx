@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useApp, isViewAllowedForRole } from '../../context/AppContext';
 import { UserRole } from '../../types';
 import { 
@@ -28,14 +28,17 @@ const ROLE_LABELS: Record<string, string> = {
   ADMINISTRADOR: 'Administrador',
 };
 
+import { generateSmartFlowAlerts } from '../../utils/smartFlowAI';
+
 export const Header: React.FC<HeaderProps> = ({ onOpenAIChat, onToggleMobileMenu }) => {
-  const { currentUser, switchRole, logout, alerts, setActiveView, resetToCleanState } = useApp();
+  const { currentUser, switchRole, logout, contracts, calls, equipments, parts, employees, setActiveView, resetToCleanState } = useApp();
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const roleRef = useRef<HTMLDivElement>(null);
   const userRef = useRef<HTMLDivElement>(null);
 
-  const unreadAlertsCount = alerts.filter(a => !a.read).length;
+  const smartAlerts = useMemo(() => generateSmartFlowAlerts({ contracts, calls, equipments, parts, employees }), [contracts, calls, equipments, parts, employees]);
+  const unreadAlertsCount = smartAlerts.filter(a => a.severity === 'CRITICO').length;
 
   // Fechar dropdowns ao clicar fora
   useEffect(() => {
@@ -160,11 +163,11 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAIChat, onToggleMobileMenu
         )}
 
         {/* Sino */}
-        {isViewAllowedForRole(currentUser.role, 'alerts') && (
+        {(isViewAllowedForRole(currentUser.role, 'intelligence') || isViewAllowedForRole(currentUser.role, 'alerts')) && (
           <button
-            onClick={() => setActiveView('alerts')}
+            onClick={() => setActiveView('intelligence')}
             className="relative p-2 bg-slate-950 border border-slate-800 hover:border-slate-700 hover:text-slate-200 rounded-xl text-slate-400 flex items-center justify-center transition-all cursor-pointer shadow-sm"
-            title="Alertas"
+            title="SmartFlow IA & Alertas"
           >
             <Bell size={15} />
             {unreadAlertsCount > 0 && (
