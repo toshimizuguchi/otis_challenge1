@@ -388,21 +388,25 @@ export interface TrainingCourse {
   }[];
 }
 
-export interface SystemAlert {
+export interface SmartFlowAlert {
   id: string;
-  category: 'CRITICO' | 'OPERACIONAL' | 'PREDITIVO' | 'FINANCEIRO' | 'SEGURANCA' | 'PECA' | 'TREINAMENTO';
-  severity: 'CRITICA' | 'ALTA' | 'MEDIA' | 'INFORMATIVA';
+  type: 'FINANCEIRO' | 'OPERACIONAL' | 'PREDITIVO' | 'ESTOQUE' | 'RH';
+  severity: 'CRITICO' | 'ALTO' | 'MEDIO' | 'INFORMATIVO';
   title: string;
+  originEntity: 'Contrato' | 'Chamado' | 'Equipamento' | 'Peça' | 'Colaborador' | 'Sistema';
+  originInfo: string;
+  reason: string;
   timestamp: string;
-  problem: string;
-  evidence: string;
-  recommendation: string;
-  targetEntityId?: string;
-  targetEntityType?: 'EQUIPMENT' | 'CALL' | 'TECHNICIAN' | 'CONTRACT' | 'SUPERVISOR';
-  actionLabel?: string;
-  actionType?: 'REASSIGN' | 'CALL_TECH' | 'VIEW_EQUIPMENT' | 'ANALYZE_CONTRACT' | 'CREATE_CAMPAIGN';
+  status: 'ATIVO' | 'RESOLVIDO';
   read: boolean;
+  actionView: 'financial' | 'calls' | 'equipments' | 'parts' | 'employees' | 'contracts' | 'history';
+  actionLabel: string;
+  resolvedAt?: string;
+  resolvedBy?: string;
+  resolutionNote?: string;
 }
+
+export type SystemAlert = SmartFlowAlert;
 
 export interface AIInsight {
   id: string;
@@ -523,6 +527,8 @@ export interface TechActivityLog {
   buildingName?: string;
   technicianName: string;
   metadata?: {
+    taskNumber?: string;
+    type?: string;
     partName?: string;
     partQuantity?: number;
     partCost?: number;

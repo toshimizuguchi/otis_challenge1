@@ -319,7 +319,7 @@ export const TechnicianDashboard: React.FC = () => {
     }));
 
     addTechActivityLog({
-      type: 'MANUTENCAO_PREVENTIVA',
+      type: 'PREVENTIVA_FEITA',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       date: `Hoje, ${new Date().toLocaleDateString('pt-BR')}`,
       title: `Manutenção Concluída: ${task.title}`,

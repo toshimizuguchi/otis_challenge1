@@ -26,7 +26,6 @@ import { PartsModule } from './components/modules/PartsModule';
 import { ContractsModule } from './components/modules/ContractsModule';
 import { AcademyModule } from './components/modules/AcademyModule';
 import { MapsModule } from './components/modules/MapsModule';
-import { AlertsCenter } from './components/modules/AlertsCenter';
 import { DataImportModule } from './components/modules/DataImportModule';
 import { FutureIoTModule } from './components/modules/FutureIoTModule';
 import { SettingsModule } from './components/modules/SettingsModule';

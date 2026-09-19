@@ -24,14 +24,14 @@ export const ManagerDashboard: React.FC = () => {
   };
 
   // Compute real financial totals from active contracts
-  const totalRevenue = contracts.reduce((acc, c) => acc + (c.contractValue || 0), 0);
-  const totalCost = contracts.reduce((acc, c) => acc + ((c.contractValue || 0) * (1 - (c.marginPercent || 0) / 100)), 0);
+  const totalRevenue = contracts.reduce((acc, c) => acc + (c.monthlyRevenue || 0), 0);
+  const totalCost = contracts.reduce((acc, c) => acc + ((c.monthlyPartsCost || 0) + (c.monthlyTechLaborCost || 0) + (c.monthlyTravelCost || 0) + (c.monthlyOtherCost || 0)), 0);
   const calculatedMargin = totalRevenue > 0 
     ? (((totalRevenue - totalCost) / totalRevenue) * 100).toFixed(1)
     : (currentManager.marginRate || 0).toString();
 
   // Compute real SLA from calls if available
-  const callsWithinSLA = calls.filter(c => !c.slaBreached).length;
+  const callsWithinSLA = calls.filter(c => c.status === 'CONCLUIDO' || c.priority !== 'CRITICO').length;
   const computedSLA = calls.length > 0 
     ? ((callsWithinSLA / calls.length) * 100).toFixed(1)
     : (currentManager.globalSLA || 100).toString();

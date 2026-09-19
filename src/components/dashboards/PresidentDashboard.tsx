@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { MetricCard } from '../common/UIComponents';
 import { EmptyState } from '../common/EmptyState';
-import { generateSmartFlowAlerts } from '../../utils/smartFlowAI';
 import { 
   ShieldCheck, 
   PhoneCall, 
@@ -13,8 +12,11 @@ import {
   MapPin,
   ChevronDown,
   Zap,
-  ArrowRight,
-  CheckCircle2
+  CheckCircle2,
+  Clock,
+  TrendingDown,
+  ChevronUp,
+  ArrowUpRight
 } from 'lucide-react';
 
 const panelStyle: React.CSSProperties = {
@@ -34,7 +36,7 @@ const panelHeaderStyle: React.CSSProperties = {
 };
 
 export const PresidentDashboard: React.FC = () => {
-  const { equipments, calls, contracts, parts, employees, setActiveView, setSelectedCityFilter } = useApp();
+  const { equipments, calls, contracts, parts, employees, alerts, setActiveView, setSelectedCityFilter } = useApp();
   const [selectedCountry, setSelectedCountry] = useState<string>('Brasil');
   const [expandedInsights, setExpandedInsights] = useState<Record<string, boolean>>({});
 
@@ -53,8 +55,8 @@ export const PresidentDashboard: React.FC = () => {
     : '0%';
 
   const totalCalls = calls.length;
-  const openCalls = calls.filter(c => c.status === 'ABERTO' || c.status === 'EM_ATENDIMENTO').length;
-  const callsWithinSLA = calls.filter(c => !c.slaBreached).length;
+  const openCalls = calls.filter(c => c.status !== 'CONCLUIDO' && c.status !== 'CANCELADO').length;
+  const callsWithinSLA = calls.filter(c => c.status === 'CONCLUIDO' || c.priority !== 'CRITICO').length;
   const slaRate = totalCalls > 0 
     ? ((callsWithinSLA / totalCalls) * 100).toFixed(1) + '%'
     : '100%';
@@ -63,23 +65,17 @@ export const PresidentDashboard: React.FC = () => {
     e => e.riskLevel === 'ALTO' || e.riskLevel === 'CRITICO' || (e.predictiveRiskScore !== undefined && e.predictiveRiskScore >= 50)
   ).length;
 
-  const totalContractRevenue = contracts.reduce((acc, c) => acc + (c.contractValue || 0), 0);
+  const totalContractRevenue = contracts.reduce((acc, c) => acc + (c.monthlyRevenue || 0), 0);
   const weightedMargin = totalContractRevenue > 0
-    ? (contracts.reduce((acc, c) => acc + ((c.contractValue || 0) * (c.marginPercent || 0)), 0) / totalContractRevenue).toFixed(1) + '%'
+    ? (contracts.reduce((acc, c) => acc + ((c.monthlyRevenue || 0) * (c.currentMarginRate || 0)), 0) / totalContractRevenue).toFixed(1) + '%'
     : '0%';
 
-  const lowMarginContractsCount = contracts.filter(c => (c.marginPercent || 0) < 20).length;
+  const lowMarginContractsCount = contracts.filter(c => (c.currentMarginRate || 0) < 20).length;
 
-  // Real alerts generated dynamically by SmartFlow IA from system data
+  // Alertas ativos do motor SmartFlow IA
   const dynamicAlerts = useMemo(() => {
-    return generateSmartFlowAlerts({
-      contracts,
-      calls,
-      equipments,
-      parts,
-      employees
-    });
-  }, [contracts, calls, equipments, parts, employees]);
+    return alerts.filter(a => a.status === 'ATIVO');
+  }, [alerts]);
 
   // Cities aggregated dynamically from real equipments and calls
   const regionalCities = useMemo(() => {
@@ -132,11 +128,11 @@ export const PresidentDashboard: React.FC = () => {
       const cityCalls = calls.filter(call => call.city === c.city);
       if (cityCalls.length > 0) {
         const doorCalls = cityCalls.filter(call => 
-          (call.component || '').toLowerCase().includes('porta') || 
+          (call.subComponent || '').toLowerCase().includes('porta') || 
           (call.problemDescription || '').toLowerCase().includes('porta')
         ).length;
         c.doorFailuresRate = Math.round((doorCalls / cityCalls.length) * 100);
-        const withinSLA = cityCalls.filter(call => !call.slaBreached).length;
+        const withinSLA = cityCalls.filter(call => call.status === 'CONCLUIDO' || call.priority !== 'CRITICO').length;
         c.slaRate = parseFloat(((withinSLA / cityCalls.length) * 100).toFixed(1));
       } else {
         c.doorFailuresRate = 0;
@@ -154,7 +150,7 @@ export const PresidentDashboard: React.FC = () => {
     return list;
   }, [equipments]);
 
-  const severityStyle = (s: 'CRITICO' | 'ALTO' | 'MEDIO' | 'BAIXO') => {
+  const severityStyle = (s: string) => {
     if (s === 'CRITICO' || s === 'ALTO') {
       return { color: '#f87171', dot: '#f87171', bg: '#2d1414', border: '#7f1d1d' };
     }
@@ -276,7 +272,7 @@ export const PresidentDashboard: React.FC = () => {
         <div style={{ padding: 16 }}>
           {dynamicAlerts.length === 0 ? (
             <EmptyState
-              icon={<CheckCircle2 style={{ width: 36, height: 36, color: '#10b981' }} />}
+              icon={CheckCircle2}
               title="Nenhuma anomalia ou risco detectado"
               description="O mecanismo SmartFlow IA analisou todos os contratos, chamados e equipamentos cadastrados e não identificou inconsistências ou desvios no momento."
             />
@@ -335,14 +331,14 @@ export const PresidentDashboard: React.FC = () => {
                         marginTop: 0
                       }}>
                         <p style={{ fontSize: 12, color: '#9aa3b2', lineHeight: 1.5, margin: '10px 0 8px' }}>
-                          {alert.description}
+                          {alert.title}
                         </p>
                         <div style={{
                           fontSize: 11, fontWeight: 600, color: sty.color,
                           backgroundColor: sty.bg, border: `1px solid ${sty.border}`,
                           borderRadius: 4, padding: '6px 10px', lineHeight: 1.4, marginBottom: 8
                         }}>
-                          → Razão Analítica: {alert.analyticalReason}
+                          → Diagnóstico IA: {alert.reason}
                         </div>
                         {alert.actionView && (
                           <button
@@ -353,8 +349,8 @@ export const PresidentDashboard: React.FC = () => {
                               border: 'none', cursor: 'pointer', padding: 0, fontWeight: 600
                             }}
                           >
-                            <span>Acessar dados relacionados</span>
-                            <ArrowRight style={{ width: 12, height: 12 }} />
+                            <span>{alert.actionLabel || 'Acessar dados relacionados'}</span>
+                            <ArrowUpRight style={{ width: 12, height: 12 }} />
                           </button>
                         )}
                       </div>
@@ -382,7 +378,7 @@ export const PresidentDashboard: React.FC = () => {
         <div style={{ padding: 16 }}>
           {regionalCities.length === 0 ? (
             <EmptyState
-              icon={<MapPin style={{ width: 36, height: 36, color: '#64748b' }} />}
+              icon={MapPin}
               title="Sem dados territoriais disponíveis"
               description="Nenhum equipamento ou chamado georreferenciado encontrado no sistema."
             />

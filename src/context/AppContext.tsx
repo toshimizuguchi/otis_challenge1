@@ -16,7 +16,7 @@ import {
   MaintenancePlan, 
   MaintenanceCampaign, 
   TrainingCourse, 
-  SystemAlert, 
+  SmartFlowAlert, 
   AIInsight,
   Employee,
   TimePunchRecord,
@@ -49,6 +49,7 @@ import {
   checkTechnicianEquipmentFamiliarity, 
   checkPreventiveMismatch 
 } from '../utils/geoUtils';
+import { generateSmartFlowAlerts, reconcileSmartFlowAlerts } from '../utils/smartFlowAI';
 
 export type ActiveView = 
   | 'dashboard'
@@ -78,7 +79,7 @@ export const ROLE_ALLOWED_VIEWS: Record<UserRole, ActiveView[]> = {
   PRESIDENTE: [
     'dashboard', 'regional', 'managers', 'maps',
     'history', 'supervisors', 'employees',
-    'intelligence', 'maintenance', 'predictive', 'parts',
+    'intelligence', 'alerts', 'maintenance', 'predictive', 'parts',
     'contracts', 'financial', 'training', 'reports',
     'future_iot', 'import'
   ],
@@ -105,13 +106,13 @@ export const ROLE_ALLOWED_VIEWS: Record<UserRole, ActiveView[]> = {
   ],
   TECNICO: [
     'dashboard', 'calls', 'history', 'parts',
-    'training', 'alerts'
+    'training', 'alerts', 'intelligence'
   ],
   ATENDENTE: [
-    'dashboard', 'calls', 'history', 'equipments', 'maps', 'alerts'
+    'dashboard', 'calls', 'history', 'equipments', 'maps', 'alerts', 'intelligence'
   ],
   FINANCEIRO: [
-    'dashboard', 'contracts', 'financial', 'employees', 'reports'
+    'dashboard', 'contracts', 'financial', 'employees', 'reports', 'intelligence', 'alerts'
   ]
 };
 
@@ -155,7 +156,7 @@ interface AppContextType {
   maintenancePlans: MaintenancePlan[];
   campaigns: MaintenanceCampaign[];
   trainings: TrainingCourse[];
-  alerts: SystemAlert[];
+  alerts: SmartFlowAlert[];
   aiInsights: AIInsight[];
   
   // Actions
@@ -185,6 +186,9 @@ interface AppContextType {
   updateEquipmentStatus: (equipmentId: string, status: Equipment['status']) => void;
   createMaintenanceCampaign: (campaign: Partial<MaintenanceCampaign>) => void;
   markAlertAsRead: (alertId: string) => void;
+  markAllAlertsAsRead: () => void;
+  resolveAlert: (alertId: string, resolutionNote?: string) => void;
+  triggerSmartFlowAnalysis: () => void;
   dismissAlert: (alertId: string) => void;
   
   // Toasts
@@ -299,9 +303,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [maintenancePlans, setMaintenancePlans] = useState<MaintenancePlan[]>(INITIAL_MAINTENANCE_PLANS);
   const [campaigns, setCampaigns] = useState<MaintenanceCampaign[]>(INITIAL_CAMPAIGNS);
   const [trainings] = useState<TrainingCourse[]>(INITIAL_TRAINING_COURSES);
-  const [alerts, setAlerts] = useState<SystemAlert[]>(() => {
-    const saved = localStorage.getItem(STORAGE_PREFIX + 'alerts');
-    return saved ? JSON.parse(saved) : INITIAL_ALERTS;
+  const [alerts, setAlerts] = useState<SmartFlowAlert[]>(() => {
+    const saved = localStorage.getItem(STORAGE_PREFIX + 'smart_alerts');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {
+        console.error('Failed to parse alerts from storage', e);
+      }
+    }
+    return generateSmartFlowAlerts({
+      contracts: INITIAL_CONTRACTS,
+      calls: INITIAL_CALLS,
+      equipments: INITIAL_EQUIPMENTS,
+      parts: INITIAL_PARTS,
+      employees: INITIAL_EMPLOYEES
+    });
   });
   const [employees, setEmployees] = useState<Employee[]>(() => {
     const saved = localStorage.getItem(STORAGE_PREFIX + 'employees');
@@ -396,8 +414,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [equipments]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_PREFIX + 'alerts', JSON.stringify(alerts));
+    localStorage.setItem(STORAGE_PREFIX + 'smart_alerts', JSON.stringify(alerts));
   }, [alerts]);
+
+  // Varredura reativa contínua do SmartFlow IA sobre dados reais do sistema
+  useEffect(() => {
+    const fresh = generateSmartFlowAlerts({ contracts, calls, equipments, parts, employees });
+    setAlerts((prev) => reconcileSmartFlowAlerts(prev, fresh));
+  }, [contracts, calls, equipments, parts, employees]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_PREFIX + 'part_requests', JSON.stringify(partRequests));
@@ -751,24 +775,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       )
     );
 
-    // Create system alert if critical
+    // Create SmartFlow Alert if critical
     if (newCall.priority === 'CRITICO' || newCall.hasTrappedPassenger || (newCall.severityLevel ?? 0) >= 4) {
-      const newAlert: SystemAlert = {
-        id: 'alt-' + Date.now(),
-        category: 'CRITICO',
-        severity: 'CRITICA',
-        title: `NOVO CHAMADO CRÍTICO (Gravidade ${newCall.severityLevel}/5): ${newCall.equipmentTag}`,
-        timestamp: new Date().toISOString(),
-        problem: `${newCall.problemDescription} (${newCall.customerName}, ${newCall.city})`,
-        evidence: `Gravidade ${newCall.severityLevel}/5 registrada. ${newCall.hasTrappedPassenger ? 'Passageiro retido no interior.' : 'Equipamento inoperante.'}`,
-        recommendation: `Técnico(s) despachado(s): ${chosenTechName}. Confirmar deslocamento imediato.`,
-        targetEntityId: newCall.id,
-        targetEntityType: 'CALL',
-        actionLabel: 'Ver Chamado',
-        actionType: 'VIEW_EQUIPMENT',
-        read: false
+      const nowTime = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      const newAlert: SmartFlowAlert = {
+        id: `alert-call-${newCall.id}`,
+        type: 'OPERACIONAL',
+        severity: 'CRITICO',
+        title: `Chamado Crítico em Aberto (#${newCall.callNumber})`,
+        originEntity: 'Chamado',
+        originInfo: `OS #${newCall.callNumber} • ${newCall.customerName} (${newCall.buildingName || newCall.city})`,
+        reason: `${newCall.hasTrappedPassenger ? 'EMERGÊNCIA: Passageiro retido no interior da cabine. ' : ''}${newCall.problemDescription} — SLA máximo de atendimento contratual de ${newCall.slaMaxHours}h. Técnico despachado: ${chosenTechName}.`,
+        timestamp: nowTime,
+        status: 'ATIVO',
+        read: false,
+        actionView: 'calls',
+        actionLabel: 'Atender Chamado'
       };
-      setAlerts((prev) => [newAlert, ...prev]);
+      setAlerts((prev) => [newAlert, ...prev.filter(a => a.id !== newAlert.id)]);
     }
 
     // Add log to Tech Activity Log timeline
@@ -867,13 +891,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })
     );
 
-    // If completed, liberate the equipment back to OPERACIONAL
+    // If completed, liberate the equipment back to OPERACIONAL and auto-resolve alert
     if (status === 'CONCLUIDO') {
       setEquipments((prev) =>
         prev.map((e) =>
           affectedCall && e.id === affectedCall.equipmentId
             ? { ...e, status: 'OPERACIONAL', lastMaintenanceDate: new Date().toISOString().split('T')[0] }
             : e
+        )
+      );
+
+      const nowResolvedTime = `${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} • ${new Date().toLocaleDateString('pt-BR')}`;
+      setAlerts((prev) =>
+        prev.map((a) =>
+          (a.id === `alert-call-${callId}` || a.id === `alt-call-${callId}`)
+            ? {
+                ...a,
+                status: 'RESOLVIDO',
+                resolvedAt: nowResolvedTime,
+                resolvedBy: currentUser.name,
+                resolutionNote: `Chamado #${affectedCall?.callNumber || callId} concluído com sucesso.`
+              }
+            : a
         )
       );
     }
@@ -943,7 +982,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setCalls([]);
     setPartRequests([]);
     setTechActivityLogs([]);
-    setAlerts(INITIAL_ALERTS);
     setTechnicians(INITIAL_TECHNICIANS.map(t => ({
       ...t,
       status: 'DISPONIVEL',
@@ -963,8 +1001,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.removeItem(STORAGE_PREFIX + 'part_requests');
     localStorage.removeItem(STORAGE_PREFIX + 'tech_logs');
     localStorage.removeItem(STORAGE_PREFIX + 'alerts');
+    localStorage.removeItem(STORAGE_PREFIX + 'smart_alerts');
     localStorage.removeItem(STORAGE_PREFIX + 'technicians');
     localStorage.removeItem(STORAGE_PREFIX + 'equipments');
+
+    // Regenera alertas a partir dos dados limpos
+    const cleanAlerts = generateSmartFlowAlerts({
+      contracts,
+      calls: [],
+      equipments: equipments.map(e => ({ ...e, status: 'OPERACIONAL' })),
+      parts,
+      employees
+    });
+    setAlerts(cleanAlerts);
 
     addToast({
       type: 'success',
@@ -1025,6 +1074,48 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setAlerts((prev) =>
       prev.map((a) => (a.id === alertId ? { ...a, read: true } : a))
     );
+  };
+
+  const markAllAlertsAsRead = () => {
+    setAlerts((prev) => prev.map((a) => ({ ...a, read: true })));
+    addToast({
+      type: 'success',
+      title: 'Alertas Lidos',
+      message: 'Todos os alertas foram marcados como lidos.'
+    });
+  };
+
+  const resolveAlert = (alertId: string, resolutionNote?: string) => {
+    const nowStr = `${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} • ${new Date().toLocaleDateString('pt-BR')}`;
+    setAlerts((prev) =>
+      prev.map((a) =>
+        a.id === alertId
+          ? {
+              ...a,
+              status: 'RESOLVIDO',
+              read: true,
+              resolvedAt: nowStr,
+              resolvedBy: currentUser.name,
+              resolutionNote: resolutionNote || 'Tratado e homologado pelo operador.'
+            }
+          : a
+      )
+    );
+    addToast({
+      type: 'success',
+      title: 'Alerta Resolvido',
+      message: 'Status atualizado para Resolvido com registro de auditoria da IA.'
+    });
+  };
+
+  const triggerSmartFlowAnalysis = () => {
+    const fresh = generateSmartFlowAlerts({ contracts, calls, equipments, parts, employees });
+    setAlerts((prev) => reconcileSmartFlowAlerts(prev, fresh));
+    addToast({
+      type: 'info',
+      title: 'SmartFlow IA',
+      message: 'Varredura concluída. Alertas analíticos atualizados com base nos dados reais do sistema.'
+    });
   };
 
   const dismissAlert = (alertId: string) => {
@@ -1210,20 +1301,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const supervisorName = targetEmp?.supervisorName || 'Roberto Viana';
     const nowStr = `Hoje, ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
-    // Create system alert
-    const newAlert: SystemAlert = {
+    // Create SmartFlow Alert
+    const newAlert: SmartFlowAlert = {
       id: 'alt-fin-' + Date.now(),
-      category: 'FINANCEIRO',
-      severity: 'ALTA',
+      type: 'RH',
+      severity: 'ALTO',
       title: `[Financeiro] Notificação para ${supervisorName}: ${subject}`,
+      originEntity: 'Colaborador',
+      originInfo: `${targetEmp?.name || 'Colaborador'} • Supervisor: ${supervisorName}`,
+      reason: message || `Auditoria do Financeiro solicitou parecer do supervisor ${supervisorName} referente a ${reasonType === 'BONUS' ? 'Bônus' : reasonType === 'HORA_EXTRA' ? 'Horas Extras' : 'Folha'}.`,
       timestamp: nowStr,
-      problem: `Contestação/Ajuste no fechamento de folha de ${targetEmp?.name || 'Colaborador'}.`,
-      evidence: message || `Auditoria do Financeiro solicitou parecer do supervisor ${supervisorName}.`,
-      recommendation: `Supervisor ${supervisorName} deve revisar e responder a contestação no módulo de Supervisão.`,
-      targetEntityType: 'SUPERVISOR',
-      actionLabel: 'Ver Folha do Colaborador',
-      actionType: 'ANALYZE_CONTRACT',
-      read: false
+      status: 'ATIVO',
+      read: false,
+      actionView: 'employees',
+      actionLabel: 'Auditar Folha'
     };
 
     setAlerts((prev) => [newAlert, ...prev]);
@@ -1498,6 +1589,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateEquipmentStatus,
         createMaintenanceCampaign,
         markAlertAsRead,
+        markAllAlertsAsRead,
+        resolveAlert,
+        triggerSmartFlowAnalysis,
         dismissAlert,
         toasts,
         addToast,

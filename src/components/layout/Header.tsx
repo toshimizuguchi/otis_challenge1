@@ -28,17 +28,14 @@ const ROLE_LABELS: Record<string, string> = {
   ADMINISTRADOR: 'Administrador',
 };
 
-import { generateSmartFlowAlerts } from '../../utils/smartFlowAI';
-
 export const Header: React.FC<HeaderProps> = ({ onOpenAIChat, onToggleMobileMenu }) => {
-  const { currentUser, switchRole, logout, contracts, calls, equipments, parts, employees, setActiveView, resetToCleanState } = useApp();
+  const { currentUser, switchRole, logout, alerts, setActiveView, resetToCleanState } = useApp();
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const roleRef = useRef<HTMLDivElement>(null);
   const userRef = useRef<HTMLDivElement>(null);
 
-  const smartAlerts = useMemo(() => generateSmartFlowAlerts({ contracts, calls, equipments, parts, employees }), [contracts, calls, equipments, parts, employees]);
-  const unreadAlertsCount = smartAlerts.filter(a => a.severity === 'CRITICO').length;
+  const unreadAlertsCount = alerts.filter(a => !a.read && a.status === 'ATIVO').length;
 
   // Fechar dropdowns ao clicar fora
   useEffect(() => {

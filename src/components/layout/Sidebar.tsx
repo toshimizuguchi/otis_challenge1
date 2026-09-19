@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp, ActiveView, isViewAllowedForRole } from '../../context/AppContext';
-import { generateSmartFlowAlerts } from '../../utils/smartFlowAI';
 import { 
   LayoutDashboard, 
   MapPin, 
@@ -49,7 +48,7 @@ interface NavSection {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseMobile }) => {
-  const { activeView, setActiveView, calls, contracts, equipments, parts, currentUser, employees, logout } = useApp();
+  const { activeView, setActiveView, calls, alerts, currentUser, employees, logout } = useApp();
   const [isTimeClockOpen, setIsTimeClockOpen] = useState(false);
   const [time, setTime] = useState(() => new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
 
@@ -60,9 +59,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
 
   const activeCalls = calls.filter(c => c.status !== 'CONCLUIDO' && c.status !== 'CANCELADO').length;
   
-  // SmartFlow IA & Alertas calculados a partir dos dados 100% reais
-  const smartAlerts = useMemo(() => generateSmartFlowAlerts({ contracts, calls, equipments, parts, employees }), [contracts, calls, equipments, parts, employees]);
-  const criticalAlerts = smartAlerts.filter(a => a.severity === 'CRITICO').length;
+  // Alertas críticos ativos do motor SmartFlow IA
+  const criticalAlerts = alerts.filter(a => a.severity === 'CRITICO' && a.status === 'ATIVO').length;
 
   const currentEmp = employees.find(e => e.id === currentUser.id);
   const punchStatus = currentEmp?.currentPunchStatus || 'FORA_DE_TURNO';

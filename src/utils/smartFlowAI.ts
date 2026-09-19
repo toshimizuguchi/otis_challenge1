@@ -1,18 +1,6 @@
-import { Contract, Call, Equipment, Part, Employee } from '../types';
+import { Contract, Call, Equipment, Part, Employee, SmartFlowAlert } from '../types';
 
-export interface SmartFlowAlert {
-  id: string;
-  type: 'FINANCEIRO' | 'OPERACIONAL' | 'PREDITIVO' | 'ESTOQUE' | 'RH';
-  severity: 'CRITICO' | 'ALTO' | 'MEDIO' | 'INFORMATIVO';
-  title: string;
-  originEntity: 'Contrato' | 'Chamado' | 'Equipamento' | 'Peça' | 'Colaborador';
-  originInfo: string;
-  reason: string;
-  timestamp: string;
-  status: 'ATIVO' | 'RESOLVIDO';
-  actionView: 'financial' | 'calls' | 'equipments' | 'parts' | 'employees' | 'contracts';
-  actionLabel: string;
-}
+export type { SmartFlowAlert };
 
 interface GenerateAlertsParams {
   contracts?: Contract[];
@@ -56,6 +44,7 @@ export function generateSmartFlowAlerts({
         reason: `Margem operacional atual em ${c.currentMarginRate}% (meta de ${c.baselineMarginRate}%). Custo total registrado de R$ ${totalCost.toLocaleString('pt-BR')} para receita de R$ ${(c.monthlyRevenue || 0).toLocaleString('pt-BR')}. ${c.aiFinancialDiagnosis || c.marginDropAlert || 'Aumento expressivo nas despesas operacionais no ciclo corrente.'}`,
         timestamp: now,
         status: 'ATIVO',
+        read: false,
         actionView: 'financial',
         actionLabel: 'Ver DRE & Custos'
       });
@@ -78,6 +67,7 @@ export function generateSmartFlowAlerts({
           reason: `${call.hasTrappedPassenger ? 'EMERGÊNCIA: Passageiro retido na cabine. ' : ''}${call.problemDescription} — SLA máximo de atendimento contratual de ${call.slaMaxHours}h. Status atual: ${call.status}.`,
           timestamp: now,
           status: 'ATIVO',
+          read: false,
           actionView: 'calls',
           actionLabel: 'Atender Chamado'
         });
@@ -87,7 +77,7 @@ export function generateSmartFlowAlerts({
 
   // 3. ANÁLISE PREDITIVA — Equipamentos com Score de Risco Elevado ou Falhas
   for (const eq of equipments) {
-    const isHighRisk = (eq.predictiveRiskScore || 0) >= 70 || eq.status === 'PARADO' || eq.status === 'EM_FALHA';
+    const isHighRisk = (eq.predictiveRiskScore || 0) >= 70 || eq.status === 'PARADO' || eq.status === 'EM_RISCO';
     
     if (isHighRisk) {
       alerts.push({
@@ -100,6 +90,7 @@ export function generateSmartFlowAlerts({
         reason: `Score de risco preditivo da IA calculado em ${eq.predictiveRiskScore}%. ${eq.riskExplanation || 'Anomalia detectada nos ciclos operacionais de portas e aceleração.'} Status do elevador: ${eq.status}.`,
         timestamp: now,
         status: 'ATIVO',
+        read: false,
         actionView: 'equipments',
         actionLabel: 'Ver Telemetria'
       });
@@ -119,6 +110,7 @@ export function generateSmartFlowAlerts({
         reason: `Saldo em almoxarifado em nível crítico: ${part.stockQuantity} unidade(s) disponível(is). ${part.abnormalAlertMessage || 'Consumo acelerado identificado em intervenções corretivas recentes.'}`,
         timestamp: now,
         status: 'ATIVO',
+        read: false,
         actionView: 'parts',
         actionLabel: 'Solicitar Reposição'
       });
@@ -141,6 +133,7 @@ export function generateSmartFlowAlerts({
         reason: `Pendências aguardando parecer do Financeiro: ${hasPendingHours ? `${emp.overtimeHours.toFixed(1)}h extras acumuladas (R$ ${(emp.overtimeTotalAmount || 0).toLocaleString('pt-BR')}). ` : ''}${hasPendingBonus ? `Bônus mensal de R$ ${(emp.bonusAmount || emp.bonusSuggested || 0).toLocaleString('pt-BR')} aguardando homologação.` : ''}`,
         timestamp: now,
         status: 'ATIVO',
+        read: false,
         actionView: 'employees',
         actionLabel: 'Auditar Folha'
       });
@@ -156,4 +149,61 @@ export function generateSmartFlowAlerts({
   };
 
   return alerts.sort((a, b) => (severityWeight[a.severity] || 99) - (severityWeight[b.severity] || 99));
+}
+
+/**
+ * Reconcilia alertas em memória e salvos no sistema, preservando status de resolução e leitura
+ */
+export function reconcileSmartFlowAlerts(
+  existingAlerts: SmartFlowAlert[],
+  freshAlerts: SmartFlowAlert[]
+): SmartFlowAlert[] {
+  const existingMap = new Map<string, SmartFlowAlert>();
+  for (const a of existingAlerts) {
+    existingMap.set(a.id, a);
+  }
+
+  const result: SmartFlowAlert[] = [];
+  const processedIds = new Set<string>();
+
+  // 1. Processa novos alertas gerados pelo motor
+  for (const fresh of freshAlerts) {
+    processedIds.add(fresh.id);
+    const prev = existingMap.get(fresh.id);
+    if (prev) {
+      result.push({
+        ...fresh,
+        status: prev.status,
+        read: prev.read,
+        resolvedAt: prev.resolvedAt,
+        resolvedBy: prev.resolvedBy,
+        resolutionNote: prev.resolutionNote
+      });
+    } else {
+      result.push(fresh);
+    }
+  }
+
+  // 2. Alertas que foram resolvidos ou gerados por eventos manuais
+  for (const prev of existingAlerts) {
+    if (!processedIds.has(prev.id)) {
+      if (prev.status === 'RESOLVIDO' || prev.id.startsWith('alt-') || prev.id.startsWith('custom-')) {
+        result.push(prev);
+      }
+    }
+  }
+
+  const severityWeight: Record<string, number> = {
+    CRITICO: 1,
+    ALTO: 2,
+    MEDIO: 3,
+    INFORMATIVO: 4
+  };
+
+  return result.sort((a, b) => {
+    if (a.status !== b.status) {
+      return a.status === 'ATIVO' ? -1 : 1;
+    }
+    return (severityWeight[a.severity] || 99) - (severityWeight[b.severity] || 99);
+  });
 }

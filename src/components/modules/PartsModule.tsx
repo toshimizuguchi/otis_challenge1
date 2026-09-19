@@ -404,14 +404,14 @@ export const PartsModule: React.FC = () => {
                   <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                     req.status === 'ENTREGUE'
                       ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                      : req.status === 'EM_TRANSITO'
+                      : req.status === 'A_CAMINHO'
                       ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
                       : 'bg-purple-500/20 text-purple-300 border border-purple-500/40'
                   }`}>
-                    {req.status === 'PENDENTE' ? 'Em Separação' : req.status === 'EM_TRANSITO' ? 'Em Trânsito' : 'Entregue'}
+                    {req.status === 'PENDENTE' ? 'Em Separação' : req.status === 'A_CAMINHO' ? 'Em Trânsito' : 'Entregue'}
                   </span>
                   <div className="text-[10px] text-slate-500 font-mono">
-                    Solicitado às {req.requestedAt ? req.requestedAt.split('T')[1]?.substring(0, 5) || '11:30' : '11:30'}
+                    Solicitado às {req.createdAt ? req.createdAt.split('T')[1]?.substring(0, 5) || '11:30' : '11:30'}
                   </div>
                 </div>
               </div>

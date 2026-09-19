@@ -31,7 +31,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   const { activeView, setActiveView, currentUser, calls, alerts } = useApp();
 
   const activeCallsCount = calls.filter(c => c.status !== 'CONCLUIDO' && c.status !== 'CANCELADO').length;
-  const unreadAlertsCount = alerts.filter(a => !a.read).length;
+  const unreadAlertsCount = alerts.filter(a => !a.read && a.status === 'ATIVO').length;
 
   const getNavItems = () => {
     switch (currentUser.role) {
@@ -58,6 +58,13 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
             id: 'parts' as ActiveView,
             label: 'Peças',
             icon: <Package className="w-5 h-5 text-amber-400" />
+          },
+          {
+            id: 'intelligence' as ActiveView,
+            label: 'SmartFlow',
+            icon: <BrainCircuit className="w-5 h-5 text-cyan-400" />,
+            badge: unreadAlertsCount > 0 ? unreadAlertsCount : undefined,
+            badgeColor: 'bg-rose-500 text-white'
           }
         ];
 
@@ -66,24 +73,31 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
           {
             id: 'dashboard' as ActiveView,
             label: 'Central',
-            icon: <LayoutDashboard className="w-5 h-5" />
+            icon: <LayoutDashboard className="w-5 h-5 text-cyan-400" />
           },
           {
             id: 'calls' as ActiveView,
             label: 'Chamados',
-            icon: <PhoneCall className="w-5 h-5" />,
+            icon: <PhoneCall className="w-5 h-5 text-rose-400" />,
             badge: activeCallsCount > 0 ? activeCallsCount : undefined,
-            badgeColor: 'bg-cyan-500 text-slate-950 font-bold'
+            badgeColor: 'bg-rose-500 text-white font-bold'
           },
           {
-            id: 'history' as ActiveView,
-            label: 'Histórico',
-            icon: <FileText className="w-5 h-5 text-emerald-400" />
+            id: 'maps' as ActiveView,
+            label: 'Radar',
+            icon: <MapPin className="w-5 h-5 text-sky-400" />
           },
           {
             id: 'equipments' as ActiveView,
-            label: 'Elevadores',
-            icon: <Building2 className="w-5 h-5" />
+            label: 'Edifícios',
+            icon: <Building2 className="w-5 h-5 text-purple-400" />
+          },
+          {
+            id: 'intelligence' as ActiveView,
+            label: 'SmartFlow',
+            icon: <BrainCircuit className="w-5 h-5 text-cyan-400" />,
+            badge: unreadAlertsCount > 0 ? unreadAlertsCount : undefined,
+            badgeColor: 'bg-rose-500 text-white'
           }
         ];
 
@@ -92,22 +106,22 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
           {
             id: 'financial' as ActiveView,
             label: 'Financeiro',
-            icon: <DollarSign className="w-5 h-5" />
+            icon: <DollarSign className="w-5 h-5 text-emerald-400" />
           },
           {
             id: 'contracts' as ActiveView,
             label: 'Contratos',
-            icon: <FileText className="w-5 h-5" />
+            icon: <FileText className="w-5 h-5 text-cyan-400" />
+          },
+          {
+            id: 'employees' as ActiveView,
+            label: 'Quadro & Folha',
+            icon: <Users className="w-5 h-5 text-amber-400" />
           },
           {
             id: 'intelligence' as ActiveView,
             label: 'SmartFlow',
-            icon: <BrainCircuit className="w-5 h-5 text-cyan-400" />
-          },
-          {
-            id: 'alerts' as ActiveView,
-            label: 'Alertas',
-            icon: <Bell className="w-5 h-5" />,
+            icon: <BrainCircuit className="w-5 h-5 text-cyan-400" />,
             badge: unreadAlertsCount > 0 ? unreadAlertsCount : undefined,
             badgeColor: 'bg-rose-500 text-white'
           }
@@ -123,9 +137,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
           {
             id: 'supervisors' as ActiveView,
             label: 'Supervisores',
-            icon: <Award className="w-5 h-5 text-amber-400" />,
-            badge: 'Ranking',
-            badgeColor: 'bg-amber-500 text-slate-950 font-bold'
+            icon: <Award className="w-5 h-5 text-amber-400" />
           },
           {
             id: 'maps' as ActiveView,
@@ -135,7 +147,9 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
           {
             id: 'intelligence' as ActiveView,
             label: 'SmartFlow',
-            icon: <BrainCircuit className="w-5 h-5 text-cyan-400" />
+            icon: <BrainCircuit className="w-5 h-5 text-cyan-400" />,
+            badge: unreadAlertsCount > 0 ? unreadAlertsCount : undefined,
+            badgeColor: 'bg-rose-500 text-white'
           }
         ];
 
