@@ -23,7 +23,9 @@ import {
   Clock,
   Sparkles,
   Smartphone,
-  Cpu
+  Cpu,
+  GraduationCap,
+  Upload
 } from 'lucide-react';
 import { TimeClockModal } from '../modals/TimeClockModal';
 
@@ -94,7 +96,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
             items: [
               { id: 'dashboard', label: 'Meu Painel', icon: Smartphone },
               { id: 'calls',     label: 'Minhas Ordens', icon: PhoneCall, count: activeCalls, countType: 'blue' },
-              { id: 'parts',     label: 'Peças & Componentes', icon: Package },
+              { id: 'history',   label: 'Histórico de O.S.', icon: FileText },
+              { id: 'parts',     label: 'Peças & Estoque', icon: Package },
+              { id: 'training',  label: 'SmartFlow Academy', icon: GraduationCap },
               { id: 'intelligence', label: 'SmartFlow IA & Alertas', icon: BrainCircuit, count: criticalAlerts, countType: 'red' },
             ]
           }
@@ -135,7 +139,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
           {
             title: 'Manutenção & Peças',
             items: [
-              { id: 'maintenance', label: 'Planos Preventivos', icon: FileSpreadsheet },
+              { id: 'maintenance', label: 'Planos Preventivos & Campanhas', icon: FileSpreadsheet },
               { id: 'parts',       label: 'Peças & Estoque', icon: Package },
             ]
           },
@@ -151,7 +155,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
             title: 'Operação & Campo',
             items: [
               { id: 'maps',     label: 'Radar em Tempo Real', icon: MapPin },
-              { id: 'training', label: 'Treinamentos da Equipe', icon: Award },
+              { id: 'training', label: 'Treinamentos da Equipe', icon: GraduationCap },
               { id: 'reports',  label: 'Relatórios do Polo', icon: FileSpreadsheet },
             ]
           }
@@ -166,6 +170,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
               { id: 'supervisors', label: 'Supervisores & Polos', icon: Award },
               { id: 'technicians', label: 'Técnicos & Rotas', icon: Wrench },
               { id: 'contracts',   label: 'Contratos & SLAs', icon: FileText },
+              { id: 'employees',   label: 'Equipe & Ponto', icon: Users },
+            ]
+          },
+          {
+            title: 'Operação & Manutenção',
+            items: [
+              { id: 'maintenance', label: 'Planos & Campanhas', icon: FileSpreadsheet },
+              { id: 'parts',       label: 'Peças & Suprimentos', icon: Package },
+              { id: 'equipments',  label: 'Parque Instalado', icon: Building2 },
+              { id: 'training',    label: 'Capacitação da Equipe', icon: GraduationCap },
             ]
           },
           {
@@ -174,7 +188,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
               { id: 'intelligence', label: 'SmartFlow IA & Alertas', icon: BrainCircuit, count: criticalAlerts, countType: 'red' },
               { id: 'predictive',   label: 'Predição Andar & Uso', icon: TrendingUp },
               { id: 'future_iot',   label: 'OTIS ONE & SCADA', icon: Cpu },
-              { id: 'equipments',   label: 'Parque Instalado', icon: Building2 },
             ]
           },
           {
@@ -196,6 +209,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
               { id: 'regional',  label: 'Desempenho Regional', icon: Globe },
               { id: 'managers',  label: 'Gerentes Regionais', icon: Users },
               { id: 'financial', label: 'Financeiro & Margens', icon: DollarSign },
+              { id: 'employees', label: 'Quadro & Folha', icon: Users },
+            ]
+          },
+          {
+            title: 'Operação & Engenharia',
+            items: [
+              { id: 'maintenance', label: 'Planos & Campanhas', icon: FileSpreadsheet },
+              { id: 'parts',       label: 'Peças & Estoque', icon: Package },
+              { id: 'contracts',   label: 'Grandes Contratos', icon: FileText },
+              { id: 'training',    label: 'SmartFlow Academy', icon: GraduationCap },
             ]
           },
           {
@@ -204,7 +227,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
               { id: 'intelligence', label: 'SmartFlow IA & Alertas', icon: BrainCircuit, count: criticalAlerts, countType: 'red' },
               { id: 'predictive',   label: 'Predição Andar & Uso', icon: TrendingUp },
               { id: 'future_iot',   label: 'OTIS ONE & SCADA', icon: Cpu },
-              { id: 'contracts',    label: 'Grandes Contratos', icon: FileText },
             ]
           },
           {
@@ -212,6 +234,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
             items: [
               { id: 'maps',    label: 'Radar Nacional', icon: MapPin },
               { id: 'reports', label: 'Relatórios da Presidência', icon: FileSpreadsheet },
+              { id: 'import',  label: 'Importação de Planilhas', icon: Upload },
             ]
           }
         ];
@@ -246,16 +269,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
               { id: 'managers',    label: 'Gerentes', icon: Users },
               { id: 'supervisors', label: 'Supervisores', icon: Award },
               { id: 'technicians', label: 'Técnicos & Rotas', icon: Wrench },
+              { id: 'employees',   label: 'Quadro & Folha', icon: Users },
             ]
           },
           {
-            title: 'Operação & IoT',
+            title: 'Operação & Manutenção',
             items: [
               { id: 'calls',        label: 'Chamados', icon: PhoneCall, count: activeCalls, countType: 'blue' },
               { id: 'equipments',   label: 'Equipamentos', icon: Building2 },
+              { id: 'maintenance',  label: 'Planos & Campanhas', icon: FileSpreadsheet },
+              { id: 'parts',        label: 'Peças & Estoque', icon: Package },
+              { id: 'training',     label: 'SmartFlow Academy', icon: GraduationCap },
+            ]
+          },
+          {
+            title: 'Inteligência & IoT',
+            items: [
+              { id: 'intelligence', label: 'SmartFlow IA & Alertas', icon: BrainCircuit, count: criticalAlerts, countType: 'red' },
               { id: 'predictive',   label: 'Predição Andar & Uso', icon: TrendingUp },
               { id: 'future_iot',   label: 'OTIS ONE & SCADA', icon: Cpu },
-              { id: 'intelligence', label: 'SmartFlow IA & Alertas', icon: BrainCircuit, count: criticalAlerts, countType: 'red' },
             ]
           },
           {
@@ -265,6 +297,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
               { id: 'contracts', label: 'Contratos', icon: FileText },
               { id: 'financial', label: 'Financeiro', icon: DollarSign },
               { id: 'reports',   label: 'Relatórios', icon: FileSpreadsheet },
+              { id: 'import',    label: 'Importar Planilhas', icon: Upload },
               { id: 'settings',  label: 'Configurações', icon: Settings },
             ]
           }

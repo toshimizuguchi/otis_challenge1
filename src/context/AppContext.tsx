@@ -185,6 +185,10 @@ interface AppContextType {
   
   updateEquipmentStatus: (equipmentId: string, status: Equipment['status']) => void;
   createMaintenanceCampaign: (campaign: Partial<MaintenanceCampaign>) => void;
+  advanceCampaignProgress: (campaignId: string, count?: number) => void;
+  updateCampaignStatus: (campaignId: string, status: MaintenanceCampaign['status']) => void;
+  deleteCampaign: (campaignId: string) => void;
+  executeMassCampaign: (campaignId: string) => void;
   markAlertAsRead: (alertId: string) => void;
   markAllAlertsAsRead: () => void;
   resolveAlert: (alertId: string, resolutionNote?: string) => void;
@@ -301,7 +305,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : INITIAL_TECH_LOGS;
   });
   const [maintenancePlans, setMaintenancePlans] = useState<MaintenancePlan[]>(INITIAL_MAINTENANCE_PLANS);
-  const [campaigns, setCampaigns] = useState<MaintenanceCampaign[]>(INITIAL_CAMPAIGNS);
+  const [campaigns, setCampaigns] = useState<MaintenanceCampaign[]>(() => {
+    const saved = localStorage.getItem(STORAGE_PREFIX + 'campaigns');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {
+        console.error('Failed to parse campaigns from storage', e);
+      }
+    }
+    return INITIAL_CAMPAIGNS;
+  });
   const [trainings] = useState<TrainingCourse[]>(INITIAL_TRAINING_COURSES);
   const [alerts, setAlerts] = useState<SmartFlowAlert[]>(() => {
     const saved = localStorage.getItem(STORAGE_PREFIX + 'smart_alerts');
@@ -430,6 +445,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem(STORAGE_PREFIX + 'tech_logs', JSON.stringify(techActivityLogs));
   }, [techActivityLogs]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_PREFIX + 'campaigns', JSON.stringify(campaigns));
+    } catch (e) {
+      console.error('Failed to save campaigns to localStorage', e);
+    }
+  }, [campaigns]);
 
   const addToast = (toastOrType: Omit<ToastMessage, 'id'> | 'success' | 'info' | 'warning' | 'error', title?: string, message?: string) => {
     const id = 'toast-' + Math.random().toString(36).substring(2, 9);
@@ -1004,6 +1027,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.removeItem(STORAGE_PREFIX + 'smart_alerts');
     localStorage.removeItem(STORAGE_PREFIX + 'technicians');
     localStorage.removeItem(STORAGE_PREFIX + 'equipments');
+    localStorage.removeItem(STORAGE_PREFIX + 'campaigns');
+    setCampaigns(INITIAL_CAMPAIGNS);
 
     // Regenera alertas a partir dos dados limpos
     const cleanAlerts = generateSmartFlowAlerts({
@@ -1055,19 +1080,115 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       totalTargetEquipments: campaignData.totalTargetEquipments || 320,
       highRiskEquipmentsCount: campaignData.highRiskEquipmentsCount || 85,
       inspectedEquipmentsCount: 0,
-      targetRegions: campaignData.targetRegions || ['Campinas', 'São Paulo', 'São Bernardo'],
+      targetRegions: campaignData.targetRegions && campaignData.targetRegions.length > 0 ? campaignData.targetRegions : ['Campinas', 'São Paulo', 'São Bernardo'],
       estimatedCost: campaignData.estimatedCost || 45000,
       startDate: new Date().toISOString().split('T')[0],
-      status: 'EM_ANDAMENTO',
+      status: campaignData.status || 'EM_ANDAMENTO',
       aiRootCauseHypothesis: campaignData.aiRootCauseHypothesis || 'Fadiga prematura aos 3 anos sob ciclagem contínua.'
     };
 
     setCampaigns((prev) => [newCamp, ...prev]);
+
+    addTechActivityLog({
+      type: 'INSPECAO_PREVENTIVA',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      date: `Hoje, ${new Date().toLocaleDateString('pt-BR')}`,
+      title: `Nova Campanha Lançada: ${newCamp.title}`,
+      description: `Disparo de campanha de manutenção preventiva em lote para ${newCamp.totalTargetEquipments} equipamentos (${newCamp.modelTarget}). Componente: ${newCamp.componentTarget}.`,
+      technicianName: currentUser.name || 'Engenharia Otis'
+    });
+
     addToast({
       type: 'success',
-      title: 'Campanha Criada',
+      title: 'Campanha Criada com Sucesso',
       message: `Campanha "${newCamp.title}" lançada para ${newCamp.totalTargetEquipments} equipamentos.`
     });
+  };
+
+  const advanceCampaignProgress = (campaignId: string, count: number = 25) => {
+    let affectedModel = '';
+    let updatedTitle = '';
+    let completedNow = false;
+
+    setCampaigns((prev) =>
+      prev.map((c) => {
+        if (c.id === campaignId) {
+          affectedModel = c.modelTarget;
+          updatedTitle = c.title;
+          const nextInspected = Math.min(c.totalTargetEquipments, c.inspectedEquipmentsCount + count);
+          const isDone = nextInspected >= c.totalTargetEquipments;
+          if (isDone) completedNow = true;
+          return {
+            ...c,
+            inspectedEquipmentsCount: nextInspected,
+            highRiskEquipmentsCount: Math.max(0, c.highRiskEquipmentsCount - Math.round(count * 0.3)),
+            status: isDone ? 'CONCLUIDA' : c.status
+          };
+        }
+        return c;
+      })
+    );
+
+    // Reduce risk on actual matching elevators in the system
+    setEquipments((prevEq) =>
+      prevEq.map((eq) => {
+        const isMatch = affectedModel
+          ? eq.model.toLowerCase().includes(affectedModel.toLowerCase().split(' ')[0]) ||
+            affectedModel.toLowerCase().includes(eq.model.toLowerCase().split(' ')[0])
+          : false;
+
+        if (isMatch && eq.predictiveRiskScore >= 50) {
+          return {
+            ...eq,
+            predictiveRiskScore: Math.max(16, eq.predictiveRiskScore - 42),
+            lastMaintenanceDate: new Date().toLocaleDateString('pt-BR'),
+            nextScheduledMaintenance: 'Fevereiro 2027'
+          };
+        }
+        return eq;
+      })
+    );
+
+    addTechActivityLog({
+      type: 'INSPECAO_PREVENTIVA',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      date: `Hoje, ${new Date().toLocaleDateString('pt-BR')}`,
+      title: `Lote de Campanha Executado: +${count} Ativos`,
+      description: `Execução de ordem preventiva em lote para a campanha "${updatedTitle}". Inspeção e substituição preventiva aplicadas aos elevadores ${affectedModel}.`,
+      technicianName: 'Equipe SmartFlow Preventiva'
+    });
+
+    addToast({
+      type: 'success',
+      title: completedNow ? 'Campanha 100% Concluída!' : 'Lote de Campanha Executado',
+      message: completedNow
+        ? `Todos os equipamentos foram revisados e a campanha "${updatedTitle}" foi finalizada.`
+        : `Mais ${count} elevadores inspecionados. Risco da frota mitigado proativamente!`
+    });
+  };
+
+  const updateCampaignStatus = (campaignId: string, status: MaintenanceCampaign['status']) => {
+    setCampaigns((prev) =>
+      prev.map((c) => (c.id === campaignId ? { ...c, status } : c))
+    );
+    addToast({
+      type: 'info',
+      title: 'Status Atualizado',
+      message: `Status da campanha alterado para ${status}.`
+    });
+  };
+
+  const deleteCampaign = (campaignId: string) => {
+    setCampaigns((prev) => prev.filter((c) => c.id !== campaignId));
+    addToast({
+      type: 'info',
+      title: 'Campanha Excluída',
+      message: 'Campanha preventiva removida do painel.'
+    });
+  };
+
+  const executeMassCampaign = (campaignId: string) => {
+    advanceCampaignProgress(campaignId, 50);
   };
 
   const markAlertAsRead = (alertId: string) => {
@@ -1588,6 +1709,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         registerTimePunch,
         updateEquipmentStatus,
         createMaintenanceCampaign,
+        advanceCampaignProgress,
+        updateCampaignStatus,
+        deleteCampaign,
+        executeMassCampaign,
         markAlertAsRead,
         markAllAlertsAsRead,
         resolveAlert,
