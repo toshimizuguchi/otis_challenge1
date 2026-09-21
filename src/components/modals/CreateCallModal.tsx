@@ -12,6 +12,8 @@ import {
   Zap,
   ShieldAlert,
   Wrench,
+  ClipboardList,
+  RotateCcw,
   Sparkles,
   CheckCircle2,
   Plus,
@@ -40,7 +42,7 @@ import {
   Check
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { CallOrigin, EquipmentType, Technician, Customer } from '../../types';
+import { CallOrigin, EquipmentType, Technician, Customer, Call } from '../../types';
 import { 
   calculateDistanceKm, 
   getRealtimeTrafficCondition, 
@@ -167,6 +169,10 @@ export const CreateCallModal: React.FC<CreateCallModalProps> = ({
   // Mode: existing customer search vs new customer registration vs emergency fast-track
   const [customerMode, setCustomerMode] = useState<'SEARCH' | 'REGISTER' | 'EMERGENCY'>('SEARCH');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Emergency call autocomplete from existing call
+  const [emergencyCallSearch, setEmergencyCallSearch] = useState('');
+  const [selectedExistingCallId, setSelectedExistingCallId] = useState<string | null>(null);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [selectedEquipmentId, setSelectedEquipmentId] = useState<string | null>(initialEquipmentId || null);
 
@@ -296,6 +302,71 @@ export const CreateCallModal: React.FC<CreateCallModalProps> = ({
       c.city.toLowerCase().includes(q)
     );
   }, [customers, searchQuery]);
+
+  // Filter existing calls for emergency autocomplete
+  const filteredExistingCalls = useMemo(() => {
+    if (!emergencyCallSearch.trim()) return calls.slice(0, 6);
+    const q = emergencyCallSearch.toLowerCase().trim();
+    return calls.filter(c =>
+      c.callNumber.toLowerCase().includes(q) ||
+      c.customerName.toLowerCase().includes(q) ||
+      (c.buildingName && c.buildingName.toLowerCase().includes(q)) ||
+      c.address.toLowerCase().includes(q) ||
+      (c.equipmentTag && c.equipmentTag.toLowerCase().includes(q)) ||
+      c.city.toLowerCase().includes(q)
+    ).slice(0, 8);
+  }, [calls, emergencyCallSearch]);
+
+  // Selected existing call object
+  const selectedExistingCall = useMemo(() => {
+    if (!selectedExistingCallId) return null;
+    return calls.find(c => c.id === selectedExistingCallId) || null;
+  }, [calls, selectedExistingCallId]);
+
+  // Autofill all form fields from a selected existing call
+  const handleSelectExistingCall = (call: Call) => {
+    setSelectedExistingCallId(call.id);
+
+    // Location & Customer
+    setNewAddress(call.address || '');
+    setNewBuildingName(call.buildingName || '');
+    setNewCustomerName(call.customerName || '');
+    setNewCustomerPhone(call.customerPhone || '');
+    setNewCity(call.city || 'Campinas');
+    setNewState(call.state || 'SP');
+
+    // Equipment specs
+    if (call.equipmentBrand) setEquipmentBrand(call.equipmentBrand);
+    if (call.equipmentType) setEquipmentType(call.equipmentType);
+    if (call.equipmentTag) setEquipmentTag(call.equipmentTag);
+    if (call.equipmentModel) setEquipmentModel(call.equipmentModel);
+    if (call.buildingType) setBuildingType(call.buildingType);
+    if (call.mainComponent) setMainComponent(call.mainComponent);
+
+    // Equipment ID link
+    if (call.equipmentId) setSelectedEquipmentId(call.equipmentId);
+
+    // Customer ID link
+    if (call.customerId) setSelectedCustomerId(call.customerId);
+
+    // Problem description with emergency prefix
+    const refDesc = call.problemDescription || '';
+    setProblemDescription(
+      `[REF: ${call.callNumber}] CHAMADO EMERGENCIAL baseado em ocorrência anterior. ${refDesc}`.trim()
+    );
+
+    addToast({
+      type: 'success',
+      title: 'Chamado Referenciado!',
+      message: `Campos autopreenchidos com dados do chamado ${call.callNumber} — ${call.buildingName || call.customerName}.`
+    });
+  };
+
+  // Clear existing call selection
+  const handleClearExistingCall = () => {
+    setSelectedExistingCallId(null);
+    setEmergencyCallSearch('');
+  };
 
   // Sync severity automation
   useEffect(() => {
@@ -886,6 +957,139 @@ export const CreateCallModal: React.FC<CreateCallModalProps> = ({
                   <span className="px-2.5 py-1 rounded-md bg-rose-500 text-white font-extrabold text-[11px] shadow-sm animate-pulse">
                     ⚡ SLA 15-20 MIN • ALERTA MÁXIMO
                   </span>
+                </div>
+
+                {/* EMERGENCY CALL AUTOCOMPLETE — Search existing call */}
+                <div className="space-y-2.5">
+                  <div className="flex items-center gap-2">
+                    <ClipboardList className="w-4 h-4 text-amber-400" />
+                    <span className="text-[11px] font-bold text-amber-200 uppercase tracking-wider">
+                      Autocompletar com Chamado Existente (Opcional)
+                    </span>
+                  </div>
+
+                  {/* Selected call reference badge */}
+                  {selectedExistingCall ? (
+                    <div className="p-3 rounded-xl bg-gradient-to-r from-emerald-950/50 via-slate-900/90 to-slate-900 border border-emerald-500/50 flex items-center justify-between gap-3 flex-wrap animate-in fade-in duration-200">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30">
+                          <CheckCircle2 className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-xs font-bold text-white">
+                              Referenciado: {selectedExistingCall.callNumber}
+                            </span>
+                            <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                              selectedExistingCall.status === 'CONCLUIDO'
+                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                : selectedExistingCall.status === 'EM_ATENDIMENTO'
+                                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                                : selectedExistingCall.priority === 'CRITICO'
+                                ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                                : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                            }`}>
+                              {selectedExistingCall.status.replace(/_/g, ' ')}
+                            </span>
+                            {selectedExistingCall.severityLevel !== undefined && (
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-800 text-slate-300 border border-slate-700">
+                                Nível {selectedExistingCall.severityLevel}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-slate-300 truncate mt-0.5">
+                            🏢 {selectedExistingCall.buildingName || selectedExistingCall.customerName} — {selectedExistingCall.address}, {selectedExistingCall.city}
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleClearExistingCall}
+                        className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer border border-slate-700 shrink-0"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        <span>Limpar e Preencher Manualmente</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Search input */}
+                      <div className="relative">
+                        <Search className="w-3.5 h-3.5 text-amber-400/80 absolute left-3 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="text"
+                          value={emergencyCallSearch}
+                          onChange={e => setEmergencyCallSearch(e.target.value)}
+                          placeholder="Buscar chamado por número, cliente, edifício, endereço ou tag do equipamento..."
+                          className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-slate-900/90 border border-amber-500/40 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/50 transition-all font-medium"
+                        />
+                      </div>
+
+                      {/* Filtered calls dropdown */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+                        {filteredExistingCalls.map(call => {
+                          const priorityColors: Record<string, string> = {
+                            CRITICO: 'bg-rose-500/20 text-rose-300 border-rose-500/30',
+                            ALTO: 'bg-orange-500/20 text-orange-300 border-orange-500/30',
+                            MEDIO: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+                            BAIXO: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                          };
+                          const statusIcons: Record<string, string> = {
+                            CRIADO: '📋',
+                            CONTACTADO: '📞',
+                            ACEITO: '✅',
+                            A_CAMINHO: '🚗',
+                            EM_ATENDIMENTO: '🔧',
+                            CONCLUIDO: '✔️',
+                            CANCELADO: '❌'
+                          };
+                          return (
+                            <div
+                              key={call.id}
+                              onClick={() => handleSelectExistingCall(call)}
+                              className="p-2.5 rounded-xl border bg-slate-900/80 border-slate-800 hover:border-amber-500/50 hover:bg-slate-900 cursor-pointer transition-all group"
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="font-mono font-bold text-amber-300 text-[11px]">
+                                      {call.callNumber}
+                                    </span>
+                                    <span className={`px-1 py-0.5 rounded text-[9px] font-bold border ${priorityColors[call.priority] || 'bg-slate-800 text-slate-400 border-slate-700'}`}>
+                                      {call.priority}
+                                    </span>
+                                    {call.hasTrappedPassenger && (
+                                      <span className="text-[9px] text-rose-400 font-bold">🚨 PRESO</span>
+                                    )}
+                                  </div>
+                                  <div className="text-[11px] text-white font-semibold truncate mt-0.5">
+                                    {call.buildingName || call.customerName}
+                                  </div>
+                                  <div className="text-[10px] text-slate-400 truncate flex items-center gap-1 mt-0.5">
+                                    <MapPin className="w-2.5 h-2.5 shrink-0 text-slate-500" />
+                                    <span>{call.address}, {call.city}</span>
+                                  </div>
+                                </div>
+                                <div className="text-right shrink-0">
+                                  <span className="text-[10px] text-slate-500">
+                                    {statusIcons[call.status] || '📋'} {call.status.replace(/_/g, ' ')}
+                                  </span>
+                                  <div className="text-[10px] text-cyan-400/80 font-mono mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    Selecionar →
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {filteredExistingCalls.length === 0 && emergencyCallSearch.trim() && (
+                          <div className="col-span-2 text-center py-4 text-slate-400 text-[11px] bg-slate-900/50 rounded-xl border border-dashed border-slate-800">
+                            Nenhum chamado encontrado com "{emergencyCallSearch}". Preencha os campos abaixo manualmente.
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
