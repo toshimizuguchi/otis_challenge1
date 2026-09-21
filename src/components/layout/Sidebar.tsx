@@ -177,7 +177,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
             title: 'Operação & Manutenção',
             items: [
               { id: 'maintenance', label: 'Planos & Campanhas', icon: FileSpreadsheet },
-              { id: 'parts',       label: 'Peças & Suprimentos', icon: Package },
               { id: 'equipments',  label: 'Parque Instalado', icon: Building2 },
               { id: 'training',    label: 'Capacitação da Equipe', icon: GraduationCap },
             ]
@@ -218,7 +217,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onCloseM
               { id: 'maintenance', label: 'Planos & Campanhas', icon: FileSpreadsheet },
               { id: 'parts',       label: 'Peças & Estoque', icon: Package },
               { id: 'contracts',   label: 'Grandes Contratos', icon: FileText },
-              { id: 'training',    label: 'SmartFlow Academy', icon: GraduationCap },
             ]
           },
           {

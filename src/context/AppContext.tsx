@@ -78,9 +78,9 @@ export type ActiveView =
 export const ROLE_ALLOWED_VIEWS: Record<UserRole, ActiveView[]> = {
   PRESIDENTE: [
     'dashboard', 'regional', 'managers', 'maps',
-    'history', 'supervisors', 'employees',
+    'supervisors', 'employees',
     'intelligence', 'alerts', 'maintenance', 'predictive', 'parts',
-    'contracts', 'financial', 'training', 'reports',
+    'contracts', 'financial', 'reports',
     'future_iot', 'import'
   ],
   ADMINISTRADOR: [
@@ -92,8 +92,8 @@ export const ROLE_ALLOWED_VIEWS: Record<UserRole, ActiveView[]> = {
   ],
   GERENTE: [
     'dashboard', 'maps', 'alerts',
-    'supervisors', 'technicians', 'managers', 'employees',
-    'intelligence', 'equipments', 'maintenance', 'predictive', 'parts',
+    'supervisors', 'technicians', 'employees',
+    'intelligence', 'equipments', 'maintenance', 'predictive',
     'contracts', 'financial', 'training', 'reports',
     'future_iot'
   ],
